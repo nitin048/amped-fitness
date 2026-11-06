@@ -1,25 +1,58 @@
 {
   "expo": {
-    "name": "amped-fitness",
+    "name": "Amped Fitness",
     "slug": "amped-fitness",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Amped Fitness requires camera access to scan meals for macronutrient analysis and calculate resting pulse via optical PPG.",
+        "NSPhotoLibraryUsageDescription": "Amped Fitness requires photo library access to upload meal images and update athlete profile avatars.",
+        "NSMotionUsageDescription": "Amped Fitness requires motion access to track daily steps, stride cadence, and velocity-based exercise balance."
+      }
     },
     "android": {
+      "package": "com.amped.fitness",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B0E14",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.BODY_SENSORS",
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Amped needs camera access to analyze meal macros and calculate resting pulse via optical PPG.",
+          "photosPermission": "Amped needs photo library access to select meal photos."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Amped needs camera and flash access to measure resting pulse and HRV via optical capillary PPG."
+        }
+      ],
+      "expo-audio",
+      "expo-asset"
+    ]
   }
 }
