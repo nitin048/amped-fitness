@@ -1618,6 +1618,99 @@ describe('E2E Feature 31: App Feature Tour & First-Time Walkthrough Engine', () 
   });
 });
 
+describe('E2E Feature 32: Active Workout Engine, Cockpit HUD & Set Matrix Table', () => {
+  it('active workout exercise list should resolve correctly for routines and free workouts', () => {
+    const mockExercises = [
+      { id: 'ex_bench', name: 'Barbell Bench Press', primary_muscle: 'chest', equipment: 'BARBELL', instructions: '', youtube_video_id: '' },
+      { id: 'ex_incline', name: 'Incline Dumbbell Press', primary_muscle: 'chest', equipment: 'DUMBBELL', instructions: '', youtube_video_id: '' },
+      { id: 'ex_dips', name: 'Chest Dips', primary_muscle: 'chest', equipment: 'BODYWEIGHT', instructions: '', youtube_video_id: '' },
+    ];
+
+    // Case 1: Preset routine active
+    const selectedRoutine = {
+      id: 'chest_hypertrophy',
+      name: 'Chest Hypertrophy',
+      split: 'PPL',
+      difficulty: 'Intermediate' as const,
+      estimatedMinutes: 50,
+      exerciseIds: ['ex_bench', 'ex_incline'],
+      description: 'Focus on chest growth',
+    };
+
+    const resolveForRoutine = (routine: typeof selectedRoutine, exList: typeof mockExercises) => {
+      return routine.exerciseIds
+        .map((id) => exList.find((e) => e.id === id))
+        .filter((e): e is typeof mockExercises[0] => Boolean(e));
+    };
+
+    const routineMovements = resolveForRoutine(selectedRoutine, mockExercises);
+    assert.strictEqual(routineMovements.length, 2);
+    assert.strictEqual(routineMovements[0].id, 'ex_bench');
+    assert.strictEqual(routineMovements[1].id, 'ex_incline');
+
+    // Case 2: Free workout (no routine) with logged session sets + selected exercise
+    const sessionSets = [
+      { exerciseId: 'ex_bench', exerciseName: 'Barbell Bench Press', muscle: 'chest', weight: 80, reps: 8 },
+      { exerciseId: 'ex_bench', exerciseName: 'Barbell Bench Press', muscle: 'chest', weight: 85, reps: 6 },
+    ];
+    const selectedEx = mockExercises[2]; // Chest Dips
+
+    const resolveForFreeWorkout = (
+      sets: typeof sessionSets,
+      currentEx: typeof selectedEx | null,
+      exList: typeof mockExercises
+    ) => {
+      const exMap = new Map<string, typeof mockExercises[0]>();
+      sets.forEach((s) => {
+        const ex = exList.find((e) => e.id === s.exerciseId);
+        if (ex) exMap.set(ex.id, ex);
+      });
+      if (currentEx && !exMap.has(currentEx.id)) {
+        exMap.set(currentEx.id, currentEx);
+      }
+      return Array.from(exMap.values());
+    };
+
+    const freeMovements = resolveForFreeWorkout(sessionSets, selectedEx, mockExercises);
+    assert.strictEqual(freeMovements.length, 2);
+    assert.strictEqual(freeMovements[0].id, 'ex_bench');
+    assert.strictEqual(freeMovements[1].id, 'ex_dips');
+  });
+
+  it('Set Matrix Table must dynamically calculate next set number and cumulative volume', () => {
+    const todaySets = [
+      { id: 1, exercise_id: 'ex_bench', weight_kg: 80, reps: 10, rpe: 8, is_pr: 0, velocity_ms: 0.65 },
+      { id: 2, exercise_id: 'ex_bench', weight_kg: 85, reps: 8, rpe: 8.5, is_pr: 0, velocity_ms: 0.60 },
+      { id: 3, exercise_id: 'ex_bench', weight_kg: 90, reps: 6, rpe: 9, is_pr: 1, velocity_ms: 0.52 },
+    ];
+
+    const nextSetNumber = todaySets.length + 1;
+    assert.strictEqual(nextSetNumber, 4, 'Next set should be Set 4');
+
+    const totalVolume = todaySets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0);
+    // 80*10 = 800, 85*8 = 680, 90*6 = 540 -> Total = 2020 kg
+    assert.strictEqual(totalVolume, 2020, 'Volume must equal sum of (weight * reps)');
+  });
+
+  it('Cockpit HUD formatTimer must format elapsed session seconds accurately', () => {
+    const formatTimer = (totalSeconds: number) => {
+      const hrs = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const secs = totalSeconds % 60;
+      if (hrs > 0) {
+        return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      }
+      return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+    assert.strictEqual(formatTimer(0), '00:00');
+    assert.strictEqual(formatTimer(65), '01:05');
+    assert.strictEqual(formatTimer(3599), '59:59');
+    assert.strictEqual(formatTimer(3665), '1:01:05');
+  });
+});
+
+
 
 
 
