@@ -108,7 +108,7 @@ Athlete Profile Context:
 
   if (lowerPrompt.includes('pull') || lowerPrompt.includes('back') || lowerPrompt.includes('bicep')) {
     return {
-      title: '⚡ Alpha Pull & Bicep Specialization',
+      title: 'Alpha Pull & Bicep Specialization',
       tagline: 'V-Taper lat width, spinal erectors and peak bicep recruitment',
       split: 'PULL',
       estimatedMinutes: 50,
@@ -170,7 +170,7 @@ Athlete Profile Context:
 
   if (lowerPrompt.includes('leg') || lowerPrompt.includes('squat') || lowerPrompt.includes('lower')) {
     return {
-      title: '🔥 High-Threshold Quad & Posterior Blast',
+      title: 'High-Threshold Quad & Posterior Blast',
       tagline: 'Compound knee extension, hip hinging and calf strength',
       split: 'LEGS',
       estimatedMinutes: 55,
@@ -232,7 +232,7 @@ Athlete Profile Context:
 
   // Default: Push / Upper Hypertrophy
   return {
-    title: '👑 Push Day Hypertrophy & Deltoid Sculpt',
+    title: 'Push Day Hypertrophy & Deltoid Sculpt',
     tagline: 'Maximum clavicular pec activation, lateral delts and tricep lockout',
     split: 'PUSH',
     estimatedMinutes: 48,

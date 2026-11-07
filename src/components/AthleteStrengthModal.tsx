@@ -123,7 +123,11 @@ export const AthleteStrengthModal: React.FC<AthleteStrengthModalProps> = ({
                 <View>
                   <Text style={[styles.tierEyebrow, { color: theme.subtext }]}>POUND-FOR-POUND TIER</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <Text style={{ fontSize: 22 }}>{strength.tier.badge}</Text>
+                    <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, backgroundColor: `${strength.tier.color}25` }}>
+                      <Text style={{ fontSize: 10, fontWeight: '900', color: strength.tier.color, letterSpacing: 0.5 }}>
+                        {strength.tier.badge}
+                      </Text>
+                    </View>
                     <Text style={[styles.tierTitle, { color: strength.tier.color }]}>
                       {strength.tier.name}
                     </Text>

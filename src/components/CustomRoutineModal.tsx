@@ -39,13 +39,13 @@ interface CustomRoutineModalProps {
 }
 
 const SPLIT_OPTIONS: Array<{ id: WorkoutRoutine['split']; label: string; icon: string }> = [
-  { id: 'PUSH', label: 'Push', icon: '⚡' },
-  { id: 'PULL', label: 'Pull', icon: '🚀' },
-  { id: 'LEGS', label: 'Legs', icon: '🦵' },
-  { id: 'UPPER', label: 'Upper', icon: '⚔️' },
-  { id: 'LOWER', label: 'Lower', icon: '🛡️' },
-  { id: 'ARMS', label: 'Arms & Abs', icon: '💪' },
-  { id: 'FULL_BODY', label: 'Full Body', icon: '👑' },
+  { id: 'PUSH', label: 'Push', icon: 'PUSH' },
+  { id: 'PULL', label: 'Pull', icon: 'PULL' },
+  { id: 'LEGS', label: 'Legs', icon: 'LEGS' },
+  { id: 'UPPER', label: 'Upper', icon: 'UPPER' },
+  { id: 'LOWER', label: 'Lower', icon: 'LOWER' },
+  { id: 'ARMS', label: 'Arms & Abs', icon: 'ARMS' },
+  { id: 'FULL_BODY', label: 'Full Body', icon: 'FULL_BODY' },
 ];
 
 const DIFFICULTY_OPTIONS: Array<WorkoutRoutine['difficulty']> = [
@@ -129,7 +129,7 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
       name: routineName.trim(),
       tagline: tagline.trim() || `${selectedSplit} Day hypertrophy and strength`,
       split: selectedSplit,
-      icon: splitMeta?.icon || '⚡',
+      icon: splitMeta?.icon || 'PUSH',
       estimatedMinutes: durationMinutes,
       difficulty,
       targetMuscles,
@@ -245,7 +245,6 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
                       ]}
                       activeOpacity={0.7}
                     >
-                      <Text style={{ fontSize: 13, marginRight: 4 }}>{opt.icon}</Text>
                       <Text
                         style={[
                           styles.splitChipText,

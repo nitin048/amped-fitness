@@ -119,7 +119,7 @@ export const getStrengthTier = (dotsScore: number): StrengthTier => {
   if (dotsScore >= 520) {
     return {
       name: 'World Class',
-      badge: '👑',
+      badge: 'TIER I',
       color: '#FFD60A',
       percentile: 99.5,
       description: 'National and international podium caliber pound-for-pound power.',
@@ -128,7 +128,7 @@ export const getStrengthTier = (dotsScore: number): StrengthTier => {
   if (dotsScore >= 450) {
     return {
       name: 'Elite',
-      badge: '⚡',
+      badge: 'TIER II',
       color: '#FF2D55',
       percentile: 95,
       description: 'Top-tier competitive lifter. Exceptional strength-to-bodyweight ratio.',
@@ -137,7 +137,7 @@ export const getStrengthTier = (dotsScore: number): StrengthTier => {
   if (dotsScore >= 375) {
     return {
       name: 'Advanced',
-      badge: '🏆',
+      badge: 'TIER III',
       color: '#AF52DE',
       percentile: 80,
       description: 'Years of serious progressive overload. Far exceeds standard gym populations.',
@@ -146,7 +146,7 @@ export const getStrengthTier = (dotsScore: number): StrengthTier => {
   if (dotsScore >= 300) {
     return {
       name: 'Proficient',
-      badge: '💪',
+      badge: 'TIER IV',
       color: '#00F0FF',
       percentile: 55,
       description: 'Solid foundation. 1.5x-2x bodyweight compound strength demonstrated.',
@@ -155,7 +155,7 @@ export const getStrengthTier = (dotsScore: number): StrengthTier => {
   if (dotsScore >= 200) {
     return {
       name: 'Intermediate',
-      badge: '🎯',
+      badge: 'TIER V',
       color: '#34C759',
       percentile: 30,
       description: 'Consistent lifter making steady linear progression gains.',
@@ -163,7 +163,7 @@ export const getStrengthTier = (dotsScore: number): StrengthTier => {
   }
   return {
     name: 'Novice',
-    badge: '🌱',
+    badge: 'TIER VI',
     color: '#8E8E93',
     percentile: 10,
     description: 'Foundational phase. Focus on form mastery and progressive adaptation.',

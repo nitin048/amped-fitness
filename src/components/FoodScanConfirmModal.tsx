@@ -137,7 +137,7 @@ export const FoodScanConfirmModal: React.FC<FoodScanConfirmModalProps> = ({
                   {loading ? 'Analyzing Food Photo...' : 'Confirm Meal & Macros'}
                 </Text>
                 <Text style={[styles.modalSub, { color: theme.subtext }]} numberOfLines={1}>
-                  {analyzedItem?.source === 'ai_vision' ? '✨ Gemini Vision Recognized' : 'Smart Nutritional Estimate'}
+                  {analyzedItem?.source === 'ai_vision' ? 'Gemini Vision Recognized' : 'Smart Nutritional Estimate'}
                 </Text>
               </View>
             </View>

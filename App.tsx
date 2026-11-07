@@ -113,14 +113,14 @@ interface SessionSetRecord {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const GYM_STAPLES = [
-  { id: '1', emoji: '🍳', name: '3 Whole Eggs', cal: 210, p: 18, c: 1, f: 14, grams: 150 },
-  { id: '2', emoji: '🥤', name: '1 Scoop Whey', cal: 120, p: 24, c: 3, f: 1, grams: 35 },
-  { id: '3', emoji: '🍗', name: '200g Chicken Breast', cal: 330, p: 62, c: 0, f: 7, grams: 200 },
-  { id: '4', emoji: '🥣', name: 'Oats & Milk', cal: 320, p: 14, c: 48, f: 7, grams: 250 },
-  { id: '5', emoji: '🧀', name: '150g Fresh Paneer', cal: 390, p: 27, c: 5, f: 30, grams: 150 },
-  { id: '6', emoji: '🍌', name: 'Banana + Peanut Butter', cal: 280, p: 8, c: 38, f: 12, grams: 150 },
-  { id: '7', emoji: '🍚', name: 'Dal & Steamed Rice', cal: 360, p: 12, c: 68, f: 4, grams: 300 },
-  { id: '8', emoji: '🐟', name: 'Grilled Fish / Salmon', cal: 280, p: 34, c: 0, f: 15, grams: 180 },
+  { id: '1', name: '3 Whole Eggs', cal: 210, p: 18, c: 1, f: 14, grams: 150 },
+  { id: '2', name: '1 Scoop Whey', cal: 120, p: 24, c: 3, f: 1, grams: 35 },
+  { id: '3', name: '200g Chicken Breast', cal: 330, p: 62, c: 0, f: 7, grams: 200 },
+  { id: '4', name: 'Oats & Milk', cal: 320, p: 14, c: 48, f: 7, grams: 250 },
+  { id: '5', name: '150g Fresh Paneer', cal: 390, p: 27, c: 5, f: 30, grams: 150 },
+  { id: '6', name: 'Banana + Peanut Butter', cal: 280, p: 8, c: 38, f: 12, grams: 150 },
+  { id: '7', name: 'Dal & Steamed Rice', cal: 360, p: 12, c: 68, f: 4, grams: 300 },
+  { id: '8', name: 'Grilled Fish / Salmon', cal: 280, p: 34, c: 0, f: 15, grams: 180 },
 ];
 
 const MainScreen = () => {
@@ -2646,7 +2646,7 @@ const MainScreen = () => {
                                   <View style={{ flex: 1, paddingRight: 6 }}>
                                     <Text style={[styles.benchmarkText, { color: theme.subtext }]} numberOfLines={1}>
                                       {exerciseHistory?.bestSet
-                                        ? `🏆 Best: ${exerciseHistory.bestSet.weight_kg}kg × ${exerciseHistory.bestSet.reps} (1RM: ${exerciseHistory.bestSet.est1RM}kg)`
+                                        ? `PR Best: ${exerciseHistory.bestSet.weight_kg}kg × ${exerciseHistory.bestSet.reps} (1RM: ${exerciseHistory.bestSet.est1RM}kg)`
                                         : 'No PR logged yet • First set sets your personal record!'}
                                     </Text>
                                     {exerciseHistory?.lastSet && (
@@ -2899,7 +2899,7 @@ const MainScreen = () => {
                   <View style={{ flex: 1, paddingRight: 6 }}>
                     <Text style={[styles.benchmarkText, { color: theme.subtext }]} numberOfLines={1}>
                       {exerciseHistory?.bestSet
-                        ? `🏆 Best: ${exerciseHistory.bestSet.weight_kg}kg × ${exerciseHistory.bestSet.reps} (1RM: ${exerciseHistory.bestSet.est1RM}kg)`
+                        ? `PR Best: ${exerciseHistory.bestSet.weight_kg}kg × ${exerciseHistory.bestSet.reps} (1RM: ${exerciseHistory.bestSet.est1RM}kg)`
                         : 'No PR history yet • First set will establish your record!'}
                     </Text>
                     {exerciseHistory?.lastSet && (
@@ -3338,7 +3338,7 @@ const MainScreen = () => {
                               {ts.weight_kg} kg × {ts.reps} reps
                             </Text>
                             <Text style={[styles.todayExSetMeta, { color: theme.subtext }]}>
-                              RPE {ts.rpe || 8} • {ts.velocity_ms} m/s {ts.is_pr === 1 ? '• 🏆 PR' : ''}
+                              RPE {ts.rpe || 8} • {ts.velocity_ms} m/s {ts.is_pr === 1 ? '• PR' : ''}
                             </Text>
                           </View>
                         </View>
@@ -3462,10 +3462,10 @@ const MainScreen = () => {
 
               <Text style={{ fontSize: 13, color: theme.subtext, lineHeight: 18, marginBottom: 14 }}>
                 {effectiveReadiness >= 75
-                  ? '⚡ Prime neuromuscular tone. High mechanical tension compound lifts and personal bests are authorized.'
+                  ? 'Prime neuromuscular tone. High mechanical tension compound lifts and personal bests are authorized.'
                   : effectiveReadiness >= 50
-                  ? '⚖️ Moderate systemic load. Antagonist muscle training, hypertrophy accessory work, or light mobility advised.'
-                  : '🛑 Elevated systemic overload detected across prime movers. Prioritize sleep, electrolytes, and parasympathetic reset.'}
+                  ? 'Moderate systemic load. Antagonist muscle training, hypertrophy accessory work, or light mobility advised.'
+                  : 'Elevated systemic overload detected across prime movers. Prioritize sleep, electrolytes, and parasympathetic reset.'}
               </Text>
 
               {/* INTERACTIVE SLEEP & SORENESS LOGGERS IN HERO CARD */}
@@ -3489,7 +3489,7 @@ const MainScreen = () => {
                     </TouchableOpacity>
                     <View style={{ flex: 1, alignItems: 'center' }}>
                       <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text }}>
-                        {recoverySleepHours >= 8 ? 'Restorative 😴' : recoverySleepHours >= 6.5 ? 'Moderate 🛌' : 'Deficit 🥱'}
+                        {recoverySleepHours >= 8 ? 'Restorative' : recoverySleepHours >= 6.5 ? 'Moderate' : 'Deficit'}
                       </Text>
                     </View>
                     <TouchableOpacity
@@ -4069,7 +4069,18 @@ const MainScreen = () => {
                         ]}
                         activeOpacity={0.7}
                       >
-                        <Text style={{ fontSize: 22 }}>{st.emoji}</Text>
+                        <View
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            backgroundColor: `${theme.primary}18`,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Utensils size={14} color={theme.primary} />
+                        </View>
                         <View style={{ flex: 1, marginLeft: 8 }}>
                           <Text numberOfLines={1} style={[styles.quickStapleName, { color: theme.text }]}>
                             {st.name}
@@ -4252,7 +4263,7 @@ const MainScreen = () => {
               >
                 <Barcode size={16} color={theme.primary} />
                 <Text style={{ fontSize: 12, fontWeight: '800', color: theme.primary }}>
-                  ⚡ Scan or Enter Barcode (Open Food Facts)
+                  Scan or Enter Barcode (Open Food Facts)
                 </Text>
               </TouchableOpacity>
             </View>

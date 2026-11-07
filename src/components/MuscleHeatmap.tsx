@@ -448,7 +448,7 @@ export const MuscleHeatmap: React.FC<Props> = ({ recoveryData, onSelectMuscleFil
                 { color: currentData.recoveryPercent > 75 ? '#30D158' : '#FFD60A' },
               ]}
             >
-              {currentData.recoveryPercent > 85 ? 'HIGH 🔥' : currentData.recoveryPercent > 60 ? 'MODERATE ⚖️' : 'LOW 🛑'}
+              {currentData.recoveryPercent > 85 ? 'HIGH' : currentData.recoveryPercent > 60 ? 'MODERATE' : 'LOW'}
             </Text>
           </View>
         </View>
@@ -456,7 +456,7 @@ export const MuscleHeatmap: React.FC<Props> = ({ recoveryData, onSelectMuscleFil
         {/* RECOMMENDATION */}
         <View style={[styles.recommendationBox, { backgroundColor: theme.card }]}>
           <Text style={[styles.recommendationText, { color: theme.text }]}>
-            💡 <Text style={{ fontWeight: '700' }}>Coach Note:</Text> {currentData.recommendation}
+            <Text style={{ fontWeight: '700' }}>Coach Note:</Text> {currentData.recommendation}
           </Text>
         </View>
 

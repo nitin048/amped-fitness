@@ -259,7 +259,7 @@ export const EnvironmentalRecoveryModal: React.FC<EnvironmentalRecoveryModalProp
               >
                 <Sparkles size={14} color={theme.primary} />
                 <Text style={{ fontSize: 12, fontWeight: '800', color: theme.primary }}>
-                  {isFetchingClimate ? 'Syncing Open-Meteo Global API...' : '⚡ Auto-Fetch Live Climate (Open-Meteo)'}
+                  {isFetchingClimate ? 'Syncing Open-Meteo Global API...' : 'Auto-Fetch Live Climate (Open-Meteo)'}
                 </Text>
               </TouchableOpacity>
 

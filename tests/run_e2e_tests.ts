@@ -1006,7 +1006,7 @@ describe('E2E Feature 23: Custom Workout Routine Builder & Persistence', () => {
       name: 'Chest & Arms Hypertrophy Blast',
       tagline: 'Custom peak volume bench and curl supersets',
       split: 'PUSH',
-      icon: '💪',
+      icon: 'PUSH',
       estimatedMinutes: 50,
       difficulty: 'Advanced',
       targetMuscles: ['CHEST', 'ARMS'],
