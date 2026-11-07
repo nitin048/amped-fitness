@@ -1239,7 +1239,7 @@ const MainScreen = () => {
       {/* TOP HEADER WITH BESPOKE ATHLETIC LOGO & PROFILE */}
       <View style={styles.topHeader}>
         <View style={{ flex: 1, marginRight: 8 }}>
-          <AmpedBrandLogo theme={theme} size={38} tagline={todayDateString} />
+          <AmpedBrandLogo theme={theme} size={42} tagline={todayDateString} />
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 }}>
