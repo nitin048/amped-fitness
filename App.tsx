@@ -215,6 +215,7 @@ const MainScreen = () => {
   const [showPlateRack, setShowPlateRack] = useState<boolean>(false);
   const [restSeconds, setRestSeconds] = useState<number>(0);
   const [showVideo, setShowVideo] = useState<boolean>(false);
+  const [showQuickLogger, setShowQuickLogger] = useState<boolean>(false);
   const [prBanner, setPrBanner] = useState<string | null>(null);
 
   // Active Workout Session State
@@ -1280,16 +1281,6 @@ const MainScreen = () => {
                     <Target size={12} color={theme.primary} />
                     <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '800' }}>Edit Targets</Text>
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowRingsInfoModal(true);
-                      Haptics.selectionAsync();
-                    }}
-                    style={[styles.actionHeaderPill, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}
-                  >
-                    <BookOpen size={13} color={theme.subtext} />
-                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -1394,6 +1385,56 @@ const MainScreen = () => {
               </View>
             </View>
 
+            {/* PROMINENT WORKOUT ACTION HERO (HEVY / APPLE STYLE) */}
+            {isWorkoutActive ? (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setActiveTab('WORKOUT');
+                }}
+                style={[styles.appleWorkoutTile, { backgroundColor: theme.cardElevated, borderColor: theme.primary, marginBottom: 14 }]}
+              >
+                <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}25` }]}>
+                  <Flame size={24} color={theme.primary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 14, paddingRight: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={[styles.pulsingGreenDot, { backgroundColor: theme.primary }]} />
+                    <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
+                      {activeWorkoutName}
+                    </Text>
+                  </View>
+                  <Text style={[styles.workoutTileMeta, { color: theme.primary, fontWeight: '800' }]} numberOfLines={1}>
+                    {formatTimer(sessionSeconds)} • {sessionVolumeKg.toLocaleString()} kg • {sessionSetsCount} sets
+                  </Text>
+                </View>
+                <ChevronRight size={20} color={theme.primary} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setActiveTab('WORKOUT');
+                }}
+                style={[styles.appleWorkoutTile, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 14 }]}
+              >
+                <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}20` }]}>
+                  <Play size={22} color={theme.primary} fill={theme.primary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 14, paddingRight: 6 }}>
+                  <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
+                    Start Workout Session
+                  </Text>
+                  <Text style={[styles.workoutTileMeta, { color: theme.subtext }]} numberOfLines={1}>
+                    {selectedRoutine?.name || 'Push, Pull, Legs & 45+ exercises'}
+                  </Text>
+                </View>
+                <View style={[styles.startPillBadge, { backgroundColor: theme.primary, flexShrink: 0 }]}>
+                  <Text style={[styles.startPillBadgeText, { color: theme.primaryText }]}>START</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
             {/* MINIMALIST ATHLETIC BIO-GLANCE GRID (4-PILL BENTO) */}
             <View style={styles.bioGlanceGrid}>
               <View style={styles.bioGlanceRow}>
@@ -1494,32 +1535,32 @@ const MainScreen = () => {
                   </View>
                 </TouchableOpacity>
 
-                {/* TILE 4: HARDWARE & SENSORS */}
+                {/* TILE 4: RECOVERY & READINESS */}
                 <TouchableOpacity
                   onPress={() => {
                     Haptics.selectionAsync();
-                    setShowSensorHubModal(true);
+                    setActiveTab('RECOVERY');
                   }}
                   style={[styles.bioGlanceTile, { backgroundColor: theme.card, borderColor: theme.border }]}
                   activeOpacity={0.75}
                 >
                   <View style={styles.bioGlanceTopRow}>
                     <View style={[styles.bioGlanceIconBadge, { backgroundColor: isOled ? '#FFFFFF15' : `${theme.primary}20` }]}>
-                      <Cpu size={14} color={isOled ? '#FFFFFF' : theme.primary} />
+                      <Zap size={14} color={isOled ? '#FFFFFF' : theme.primary} />
                     </View>
-                    <Text style={[styles.bioGlanceStatusPill, { color: isOled ? '#FFFFFF' : theme.primary }]}>
-                      {latestEnv ? `${latestEnv.tempC}°C` : '22°C'}
+                    <Text style={[styles.bioGlanceStatusPill, { color: avgReadiness >= 75 ? (isOled ? '#FFFFFF' : '#30D158') : theme.subtext }]}>
+                      {avgReadiness >= 75 ? 'Optimal' : avgReadiness >= 50 ? 'Recovering' : 'Fatigued'}
                     </Text>
                   </View>
                   <Text style={[styles.bioGlanceValue, { color: theme.text }]} numberOfLines={1}>
-                    15+ <Text style={{ fontSize: 13, fontWeight: '700', color: theme.subtext }}>SENSORS</Text>
+                    {avgReadiness}% <Text style={{ fontSize: 13, fontWeight: '700', color: theme.subtext }}>READY</Text>
                   </Text>
                   <View style={styles.bioGlanceBottomRow}>
                     <Text style={[styles.bioGlanceLabel, { color: theme.subtext }]}>
-                      Hardware
+                      Recovery State
                     </Text>
-                    <Text style={[styles.bioGlanceSub, { color: theme.subtext }]}>
-                      Live Telemetry
+                    <Text style={[styles.bioGlanceSub, { color: theme.primary }]}>
+                      View Heatmap →
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -1612,66 +1653,6 @@ const MainScreen = () => {
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* WORKOUTS SECTION */}
-            <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.sectionMainTitle, { color: theme.text }]}>Workouts</Text>
-              <TouchableOpacity onPress={() => setActiveTab('WORKOUT')}>
-                <Text style={[styles.sectionActionText, { color: theme.primary }]}>
-                  {isWorkoutActive ? 'Live Session >' : 'Start Training >'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* ACTIVE WORKOUT TILE / QUICK LAUNCHER */}
-            {isWorkoutActive ? (
-              <TouchableOpacity
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setActiveTab('WORKOUT');
-                }}
-                style={[styles.appleWorkoutTile, { backgroundColor: theme.cardElevated, borderColor: theme.primary }]}
-              >
-                <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}25` }]}>
-                  <Flame size={24} color={theme.primary} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 14, paddingRight: 4 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <View style={[styles.pulsingGreenDot, { backgroundColor: theme.primary }]} />
-                    <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
-                      {activeWorkoutName}
-                    </Text>
-                  </View>
-                  <Text style={[styles.workoutTileMeta, { color: theme.primary, fontWeight: '800' }]} numberOfLines={1}>
-                    {formatTimer(sessionSeconds)} • {sessionVolumeKg.toLocaleString()} kg • {sessionSetsCount} sets
-                  </Text>
-                </View>
-                <ChevronRight size={20} color={theme.primary} />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setActiveTab('WORKOUT');
-                }}
-                style={[styles.appleWorkoutTile, { backgroundColor: theme.card, borderColor: theme.border }]}
-              >
-                <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}20` }]}>
-                  <Play size={22} color={theme.primary} fill={theme.primary} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 14, paddingRight: 6 }}>
-                  <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
-                    Start Workout Session
-                  </Text>
-                  <Text style={[styles.workoutTileMeta, { color: theme.subtext }]} numberOfLines={1}>
-                    {selectedRoutine?.name || 'Push, Pull, Legs & 45+ exercises'}
-                  </Text>
-                </View>
-                <View style={[styles.startPillBadge, { backgroundColor: theme.primary, flexShrink: 0 }]}>
-                  <Text style={[styles.startPillBadgeText, { color: theme.primaryText }]}>START</Text>
-                </View>
-              </TouchableOpacity>
-            )}
 
             {/* RECENT SESSIONS HISTORY */}
             {recentSessions.length > 0 && (
@@ -2136,14 +2117,14 @@ const MainScreen = () => {
               </ScrollView>
             </View>
 
-            {/* 5. SELECTED EXERCISE HERO LOGGING HUD */}
-            {selectedEx && (
+            {/* 5. SELECTED EXERCISE CARD: PRE-WORKOUT MOVEMENT PREVIEW OR ACTIVE SET LOGGER */}
+            {selectedEx && !isWorkoutActive && !showQuickLogger && (
               <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                {/* SET INDICATOR */}
+                {/* MOVEMENT HEADER */}
                 <View style={styles.setCounterRow}>
                   <View style={{ flex: 1, paddingRight: 8 }}>
-                    <Text style={[styles.setCounterLabel, { color: theme.subtext }]} numberOfLines={1}>
-                      SET {isWorkoutActive ? sessionSetsCount + 1 : currentSetNumber} • {selectedEx.primary_muscle}
+                    <Text style={[styles.setCounterLabel, { color: theme.primary }]} numberOfLines={1}>
+                      {selectedEx.primary_muscle.toUpperCase()} • {selectedEx.equipment}
                     </Text>
                     <Text
                       style={[styles.activeExerciseTitle, { color: theme.text }]}
@@ -2170,6 +2151,166 @@ const MainScreen = () => {
                       {showVideo ? 'Hide' : 'Form Video'}
                     </Text>
                   </TouchableOpacity>
+                </View>
+
+                {/* FORM INSTRUCTIONS */}
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginVertical: 6 }}>
+                  <Sparkles size={13} color={theme.primary} style={{ marginTop: 2 }} />
+                  <Text style={[styles.instructionsText, { color: theme.subtext, flex: 1 }]} numberOfLines={2}>
+                    {selectedEx.instructions}
+                  </Text>
+                </View>
+
+                {/* VIDEO IFRAME */}
+                {showVideo && (
+                  <View style={styles.ytContainer}>
+                    <YouTubeEmbedPlayer
+                      videoId={selectedEx.youtube_video_id}
+                      height={200}
+                      theme={theme}
+                      title={selectedEx.name}
+                    />
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        const vId = selectedEx.youtube_video_id;
+                        Linking.openURL(`https://www.youtube.com/watch?v=${vId}`);
+                      }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        paddingVertical: 7,
+                        backgroundColor: isOled ? 'rgba(255, 255, 255, 0.08)' : '#FF000018',
+                        borderRadius: 8,
+                        marginTop: 4,
+                        borderWidth: 1,
+                        borderColor: isOled ? 'rgba(255, 255, 255, 0.2)' : '#FF000035',
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Play size={11} color={isOled ? '#FFFFFF' : '#FF0000'} fill={isOled ? '#FFFFFF' : '#FF0000'} />
+                      <Text style={{ color: theme.text, fontSize: 11, fontWeight: '700' }}>
+                        Watch on YouTube App (Full Screen)
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* BENCHMARK & PR TARGET BANNER */}
+                <View style={[styles.benchmarkRow, { backgroundColor: theme.cardElevated, borderColor: theme.border, marginTop: 8 }]}>
+                  <View style={{ flex: 1, paddingRight: 6 }}>
+                    <Text style={[styles.benchmarkText, { color: theme.subtext }]} numberOfLines={1}>
+                      {exerciseHistory?.bestSet
+                        ? `🏆 Best: ${exerciseHistory.bestSet.weight_kg}kg × ${exerciseHistory.bestSet.reps} (1RM: ${exerciseHistory.bestSet.est1RM}kg)`
+                        : 'No PR history yet • First set will establish your record!'}
+                    </Text>
+                    {exerciseHistory?.lastSet && (
+                      <Text style={{ fontSize: 10, color: theme.primary, fontWeight: '700', marginTop: 1 }}>
+                        Last session: {exerciseHistory.lastSet.weight_kg}kg × {exerciseHistory.lastSet.reps} reps (RPE {exerciseHistory.lastSet.rpe || 8})
+                      </Text>
+                    )}
+                  </View>
+                </View>
+
+                {/* ATHLETIC ACTIONS: START WORKOUT OR QUICK LOG */}
+                <View style={{ marginTop: 12, gap: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      handleStartWorkout(undefined, selectedEx.name);
+                    }}
+                    style={[styles.applePrimaryBtn, { backgroundColor: theme.primary, marginTop: 0 }]}
+                    activeOpacity={0.85}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                      <Play size={16} color={theme.primaryText} fill={theme.primaryText} />
+                      <Text style={[styles.applePrimaryBtnText, { color: theme.primaryText }]}>
+                        START WORKOUT WITH THIS MOVEMENT
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setShowQuickLogger(true);
+                    }}
+                    style={[
+                      styles.appleSecondaryBtn,
+                      { backgroundColor: theme.cardElevated, borderColor: theme.border, marginTop: 0 },
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <Zap size={14} color={theme.primary} />
+                      <Text style={[styles.appleSecondaryBtnText, { color: theme.text, fontSize: 12 }]}>
+                        Or Quick Log Single Set Without Routine
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* ACTIVE HEVY-STYLE FOCUSED WORKOUT SET LOGGER */}
+            {selectedEx && (isWorkoutActive || showQuickLogger) && (
+              <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                {/* SET INDICATOR & UTILITY TOOLBAR */}
+                <View style={styles.setCounterRow}>
+                  <View style={{ flex: 1, paddingRight: 8 }}>
+                    <Text style={[styles.setCounterLabel, { color: theme.subtext }]} numberOfLines={1}>
+                      SET {isWorkoutActive ? sessionSetsCount + 1 : currentSetNumber} • {selectedEx.primary_muscle}
+                    </Text>
+                    <Text
+                      style={[styles.activeExerciseTitle, { color: theme.text }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
+                      {selectedEx.name}
+                    </Text>
+                  </View>
+
+                  {/* 4-TOOL ICON PILLS (HEVY PATTERN) */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setShowVideo(!showVideo);
+                      }}
+                      style={[
+                        styles.ytFormGuideBtn,
+                        {
+                          backgroundColor: showVideo ? `${theme.primary}20` : theme.cardElevated,
+                          paddingHorizontal: 8,
+                          paddingVertical: 5,
+                        },
+                      ]}
+                    >
+                      <Play size={12} color={theme.primary} fill={theme.primary} />
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: theme.primary }}>
+                        {showVideo ? 'Hide' : 'Video'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {showQuickLogger && !isWorkoutActive && (
+                      <TouchableOpacity
+                        onPress={() => setShowQuickLogger(false)}
+                        style={{
+                          paddingHorizontal: 8,
+                          paddingVertical: 5,
+                          borderRadius: 8,
+                          backgroundColor: theme.cardElevated,
+                          borderWidth: 1,
+                          borderColor: theme.border,
+                        }}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: theme.subtext }}>Close</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
 
                 {/* FORM INSTRUCTIONS */}
@@ -2418,6 +2559,24 @@ const MainScreen = () => {
                   </Text>
                 </View>
 
+                {/* PRIMARY COMPLETE SET ACTION BUTTON (IMMEDIATELY ACCESSIBLE) */}
+                <TouchableOpacity
+                  onPress={handleCompleteSet}
+                  style={[styles.applePrimaryBtn, { backgroundColor: theme.primary, marginTop: 14 }]}
+                  activeOpacity={0.85}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <CheckCircle2 size={18} color={theme.primaryText} />
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                      style={[styles.applePrimaryBtnText, { color: theme.primaryText }]}>
+                      Log Set & Start Rest Timer
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
                 {/* COLLAPSIBLE ATHLETE UTILITIES */}
                 {/* 1. WARMUP CALCULATOR TOGGLE */}
                 <TouchableOpacity
@@ -2612,20 +2771,6 @@ const MainScreen = () => {
                     </TouchableOpacity>
                   </View>
                 )}
-
-                {/* COMPLETE SET BUTTON */}
-                <TouchableOpacity
-                  onPress={handleCompleteSet}
-                  style={[styles.applePrimaryBtn, { backgroundColor: theme.primary }]}
-                >
-                  <Text
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.8}
-                    style={[styles.applePrimaryBtnText, { color: theme.primaryText }]}>
-                    Log Set & Start Rest Timer
-                  </Text>
-                </TouchableOpacity>
 
                 {/* TODAY'S SETS FOR THIS EXERCISE */}
                 {exerciseHistory && exerciseHistory.todaySets.length > 0 && (
@@ -3296,55 +3441,209 @@ const MainScreen = () => {
                   Estimated Burn: {athleteMetrics.tdee} kcal TDEE ({userProfile.bodyWeightKg}kg • {userProfile.gender} • {userProfile.weeklyWorkoutDaysTarget}d/wk)
                 </Text>
               </View>
+            </View>
 
-              {/* 1-TAP QUICK GYM STAPLES LOGGING */}
-              <View style={{ marginTop: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={[styles.stepperHeader, { color: theme.subtext }]}>1-TAP GYM STAPLES</Text>
-                  <Text style={{ fontSize: 10, color: theme.tertiary, fontWeight: '700' }}>TAP TO LOG</Text>
+            {/* 2. NUTRITION QUICK ACTION 4-CAPSULE DOCK */}
+            <View style={styles.workoutQuickBar}>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  handlePickFoodImage('camera');
+                }}
+                style={[styles.workoutQuickCapsule, { backgroundColor: theme.cardElevated, borderColor: `${theme.primary}50` }]}
+                activeOpacity={0.75}
+              >
+                <Camera size={14} color={theme.primary} />
+                <Text style={[styles.workoutQuickCapsuleText, { color: theme.primary }]}>AI Vision</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setShowBarcodeModal(true);
+                }}
+                style={[styles.workoutQuickCapsule, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}
+                activeOpacity={0.75}
+              >
+                <Barcode size={14} color={theme.text} />
+                <Text style={[styles.workoutQuickCapsuleText, { color: theme.text }]}>Barcode</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  handleAddWater(250);
+                }}
+                style={[styles.workoutQuickCapsule, { backgroundColor: theme.cardElevated, borderColor: '#00F0FF40' }]}
+                activeOpacity={0.75}
+              >
+                <Droplets size={14} color="#00F0FF" />
+                <Text style={[styles.workoutQuickCapsuleText, { color: '#00F0FF' }]}>+250ml Water</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setShowTargetsModal(true);
+                }}
+                style={[styles.workoutQuickCapsule, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}
+                activeOpacity={0.75}
+              >
+                <Target size={14} color={theme.text} />
+                <Text style={[styles.workoutQuickCapsuleText, { color: theme.text }]}>Goals</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 3. 1-TAP QUICK GYM STAPLES */}
+            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <View>
+                  <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>INSTANT LOG</Text>
+                  <Text style={[styles.cardTitle, { color: theme.text }]}>1-Tap Gym Staples</Text>
                 </View>
-                <View style={{ gap: 8 }}>
-                  {[0, 2, 4, 6].map((startIndex) => (
-                    <View key={startIndex} style={{ flexDirection: 'row', gap: 8 }}>
-                      {[GYM_STAPLES[startIndex], GYM_STAPLES[startIndex + 1]].map((st) => (
-                        <TouchableOpacity
-                          key={st.id}
-                          onPress={() => handleQuickLogStaple(st)}
-                          style={[
-                            styles.quickStapleCard,
-                            {
-                              flex: 1,
-                              backgroundColor: theme.cardElevated,
-                              borderColor: theme.border,
-                              minWidth: 0,
-                              paddingVertical: 10,
-                              paddingHorizontal: 12,
-                            },
-                          ]}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={{ fontSize: 22 }}>{st.emoji}</Text>
-                          <View style={{ flex: 1, marginLeft: 8 }}>
-                            <Text numberOfLines={1} style={[styles.quickStapleName, { color: theme.text }]}>
-                              {st.name}
-                            </Text>
-                            <Text numberOfLines={1} style={[styles.quickStapleMeta, { color: theme.primary }]}>
-                              {st.cal} kcal • {st.p}g P
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  ))}
+                <Text style={{ fontSize: 10, color: theme.primary, fontWeight: '700' }}>TAP TO LOG</Text>
+              </View>
+              <View style={{ gap: 8 }}>
+                {[0, 2, 4, 6].map((startIndex) => (
+                  <View key={startIndex} style={{ flexDirection: 'row', gap: 8 }}>
+                    {[GYM_STAPLES[startIndex], GYM_STAPLES[startIndex + 1]].map((st) => (
+                      <TouchableOpacity
+                        key={st.id}
+                        onPress={() => handleQuickLogStaple(st)}
+                        style={[
+                          styles.quickStapleCard,
+                          {
+                            flex: 1,
+                            backgroundColor: theme.cardElevated,
+                            borderColor: theme.border,
+                            minWidth: 0,
+                            paddingVertical: 10,
+                            paddingHorizontal: 12,
+                          },
+                        ]}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={{ fontSize: 22 }}>{st.emoji}</Text>
+                        <View style={{ flex: 1, marginLeft: 8 }}>
+                          <Text numberOfLines={1} style={[styles.quickStapleName, { color: theme.text }]}>
+                            {st.name}
+                          </Text>
+                          <Text numberOfLines={1} style={[styles.quickStapleMeta, { color: theme.primary }]}>
+                            {st.cal} kcal • {st.p}g P
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* 4. SMART FOOD SEARCH & AI SCAN */}
+            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View style={styles.cardHeaderRow}>
+                <View>
+                  <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>GLOBAL DATABASE</Text>
+                  <Text style={[styles.cardTitle, { color: theme.text }]}>Food Search & AI Vision</Text>
                 </View>
+                <Sparkles size={20} color={theme.primary} />
               </View>
 
-              {/* SMART PHOTO SCAN WITH AI VISION */}
-              <View style={{ marginTop: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <Sparkles size={14} color={theme.primary} />
-                  <Text style={[styles.stepperHeader, { color: theme.subtext }]}>SMART PHOTO SCAN & LOG</Text>
+              {/* SEARCH INPUT */}
+              <View style={[styles.openFoodSearchBox, { backgroundColor: theme.cardElevated, borderColor: theme.border, marginTop: 10 }]}>
+                <Search size={16} color={theme.subtext} />
+                <TextInput
+                  placeholder="Search 3M+ foods (e.g. Oats, Chicken, Rice)..."
+                  placeholderTextColor={theme.subtext}
+                  value={foodSearchQuery}
+                  onChangeText={setFoodSearchQuery}
+                  onSubmitEditing={handleSearchOpenFood}
+                  returnKeyType="search"
+                  style={[styles.openFoodSearchInput, { color: theme.text }]}
+                />
+                <TouchableOpacity
+                  onPress={handleSearchOpenFood}
+                  style={[styles.openFoodSearchBtn, { backgroundColor: theme.primary, flexShrink: 0 }]}
+                >
+                  {isSearchingFoodDb ? (
+                    <ActivityIndicator size="small" color={theme.primaryText} />
+                  ) : (
+                    <Text style={[styles.openFoodSearchBtnText, { color: theme.primaryText }]}>Search</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {/* SEARCH RESULTS DROPDOWN */}
+              {foodSearchResults.length > 0 && (
+                <View style={[styles.foodResultsContainer, { backgroundColor: theme.cardElevated, borderColor: theme.border, marginTop: 8 }]}>
+                  <Text style={[styles.resultsHeaderLabel, { color: theme.subtext }]}>
+                    Found {foodSearchResults.length} foods in Open Database:
+                  </Text>
+                  {foodSearchResults.map((food) => {
+                    const isSelected = selectedFoodItem?.id === food.id;
+                    return (
+                      <View
+                        key={food.id}
+                        style={[
+                          styles.foodResultRow,
+                          {
+                            backgroundColor: isSelected ? theme.card : 'transparent',
+                            borderBottomColor: theme.border,
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
+                          },
+                        ]}
+                      >
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedFoodItem(food);
+                            Haptics.selectionAsync();
+                          }}
+                          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                        >
+                          <View style={{ flex: 1, paddingRight: 6 }}>
+                            <Text numberOfLines={1} style={[styles.foodResultTitle, { color: theme.text }]}>{food.name}</Text>
+                            <Text numberOfLines={1} style={[styles.foodResultMeta, { color: theme.primary }]}>
+                              {food.caloriesPer100g} kcal/100g • P: {food.proteinPer100g}g | C: {food.carbsPer100g}g | F: {food.fatPer100g}g
+                            </Text>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => handleLogFoodItem(food, 100)}
+                            style={[styles.quickLogFoodBtn, { backgroundColor: theme.primary, flexShrink: 0 }]}
+                          >
+                            <Text style={[styles.quickLogFoodBtnText, { color: theme.primaryText }]}>+ Log 100g</Text>
+                          </TouchableOpacity>
+                        </TouchableOpacity>
+
+                        {isSelected && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: theme.border }}>
+                            <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: '700' }}>Portion:</Text>
+                            {[50, 150, 200, 250].map((grams) => (
+                              <TouchableOpacity
+                                key={grams}
+                                onPress={() => handleLogFoodItem(food, grams)}
+                                style={{
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 3,
+                                  borderRadius: 6,
+                                  backgroundColor: theme.cardElevated,
+                                  borderWidth: 1,
+                                  borderColor: theme.border,
+                                }}
+                              >
+                                <Text style={{ fontSize: 10, color: theme.text, fontWeight: '700' }}>+{grams}g</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
                 </View>
+              )}
+
+              {/* PHOTO SCAN & HINT INPUT */}
+              <View style={{ marginTop: 14 }}>
                 <TextInput
                   placeholder="Optional hint: e.g. 3 Eggs Omelette + Toast"
                   placeholderTextColor={theme.subtext}
@@ -3353,15 +3652,14 @@ const MainScreen = () => {
                   style={[styles.foodHintInput, { backgroundColor: theme.cardElevated, color: theme.text, borderColor: theme.border }]}
                 />
 
-                {/* CAMERA & GALLERY QUICK BUTTONS */}
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
                   <TouchableOpacity
                     onPress={() => handlePickFoodImage('camera')}
                     disabled={isScanningFood || isAnalyzingFood}
                     style={[styles.applePrimaryBtn, { flex: 1, backgroundColor: theme.primary, marginTop: 0 }]}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Camera size={18} color={theme.primaryText} />
+                      <Camera size={16} color={theme.primaryText} />
                       <Text style={[styles.applePrimaryBtnText, { color: theme.primaryText }]}>
                         {isAnalyzingFood ? 'ANALYZING...' : 'CAMERA'}
                       </Text>
@@ -3371,10 +3669,10 @@ const MainScreen = () => {
                   <TouchableOpacity
                     onPress={() => handlePickFoodImage('library')}
                     disabled={isScanningFood || isAnalyzingFood}
-                    style={[styles.appleSecondaryBtn, { flex: 1, backgroundColor: theme.cardElevated, borderColor: theme.border }]}
+                    style={[styles.appleSecondaryBtn, { flex: 1, backgroundColor: theme.cardElevated, borderColor: theme.border, marginTop: 0 }]}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <ImageIcon size={18} color={theme.text} />
+                      <ImageIcon size={16} color={theme.text} />
                       <Text style={[styles.appleSecondaryBtnText, { color: theme.text }]}>
                         GALLERY
                       </Text>
@@ -3383,7 +3681,7 @@ const MainScreen = () => {
                 </View>
               </View>
 
-              {/* OPEN FOOD FACTS BARCODE SCANNER ACTION */}
+              {/* BARCODE SCANNER ACTION */}
               <TouchableOpacity
                 onPress={() => {
                   setShowBarcodeModal(true);
@@ -3401,7 +3699,6 @@ const MainScreen = () => {
                   borderWidth: 1,
                   borderColor: `${theme.primary}50`,
                   marginTop: 12,
-                  marginBottom: 4,
                 }}
                 activeOpacity={0.8}
               >
@@ -3410,102 +3707,6 @@ const MainScreen = () => {
                   ⚡ Scan or Enter Barcode (Open Food Facts)
                 </Text>
               </TouchableOpacity>
-
-              {/* SECTION: 3M+ GLOBAL NUTRITION DATABASE SEARCH */}
-              <View style={{ marginTop: 16, marginBottom: 4 }}>
-                <Text style={[styles.stepperHeader, { color: theme.subtext }]}>SEARCH 3M+ VERIFIED FOODS</Text>
-                <View style={[styles.openFoodSearchBox, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
-                  <Search size={16} color={theme.subtext} />
-                  <TextInput
-                    placeholder="Search by food name (e.g. Oats, Egg, Chicken, Rice)..."
-                    placeholderTextColor={theme.subtext}
-                    value={foodSearchQuery}
-                    onChangeText={setFoodSearchQuery}
-                    onSubmitEditing={handleSearchOpenFood}
-                    returnKeyType="search"
-                    style={[styles.openFoodSearchInput, { color: theme.text }]}
-                  />
-                  <TouchableOpacity
-                    onPress={handleSearchOpenFood}
-                    style={[styles.openFoodSearchBtn, { backgroundColor: theme.primary, flexShrink: 0 }]}
-                  >
-                    {isSearchingFoodDb ? (
-                      <ActivityIndicator size="small" color={theme.primaryText} />
-                    ) : (
-                      <Text style={[styles.openFoodSearchBtnText, { color: theme.primaryText }]}>Search</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-
-                {/* SEARCH RESULTS DROPDOWN */}
-                {foodSearchResults.length > 0 && (
-                  <View style={[styles.foodResultsContainer, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
-                    <Text style={[styles.resultsHeaderLabel, { color: theme.subtext }]}>
-                      Found {foodSearchResults.length} foods in Open Database:
-                    </Text>
-                    {foodSearchResults.map((food) => {
-                      const isSelected = selectedFoodItem?.id === food.id;
-                      return (
-                        <View
-                          key={food.id}
-                          style={[
-                            styles.foodResultRow,
-                            {
-                              backgroundColor: isSelected ? theme.card : 'transparent',
-                              borderBottomColor: theme.border,
-                              flexDirection: 'column',
-                              alignItems: 'stretch',
-                            },
-                          ]}
-                        >
-                          <TouchableOpacity
-                            onPress={() => {
-                              setSelectedFoodItem(food);
-                              Haptics.selectionAsync();
-                            }}
-                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-                          >
-                            <View style={{ flex: 1, paddingRight: 6 }}>
-                              <Text numberOfLines={1} style={[styles.foodResultTitle, { color: theme.text }]}>{food.name}</Text>
-                              <Text numberOfLines={1} style={[styles.foodResultMeta, { color: theme.primary }]}>
-                                {food.caloriesPer100g} kcal/100g • P: {food.proteinPer100g}g | C: {food.carbsPer100g}g | F: {food.fatPer100g}g
-                              </Text>
-                            </View>
-                            <TouchableOpacity
-                              onPress={() => handleLogFoodItem(food, 100)}
-                              style={[styles.quickLogFoodBtn, { backgroundColor: theme.primary, flexShrink: 0 }]}
-                            >
-                              <Text style={[styles.quickLogFoodBtnText, { color: theme.primaryText }]}>+ Log 100g</Text>
-                            </TouchableOpacity>
-                          </TouchableOpacity>
-
-                          {isSelected && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: theme.border }}>
-                              <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: '700' }}>Portion:</Text>
-                              {[50, 150, 200, 250].map((grams) => (
-                                <TouchableOpacity
-                                  key={grams}
-                                  onPress={() => handleLogFoodItem(food, grams)}
-                                  style={{
-                                    paddingHorizontal: 8,
-                                    paddingVertical: 3,
-                                    borderRadius: 6,
-                                    backgroundColor: theme.cardElevated,
-                                    borderWidth: 1,
-                                    borderColor: theme.border,
-                                  }}
-                                >
-                                  <Text style={{ fontSize: 10, color: theme.text, fontWeight: '700' }}>+{grams}g</Text>
-                                </TouchableOpacity>
-                              ))}
-                            </View>
-                          )}
-                        </View>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
             </View>
 
             {/* MEALS LIST */}
