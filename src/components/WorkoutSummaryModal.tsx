@@ -6,7 +6,6 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {
@@ -40,8 +39,6 @@ interface WorkoutSummaryModalProps {
   exercisesCompleted: ExerciseSummaryItem[];
   onFinish: () => void;
 }
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   visible,
@@ -106,70 +103,76 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
               </View>
             )}
 
-            {/* APPLE 2x2 METRIC TILES */}
+            {/* 2-COLUMN METRIC TILES */}
             <View style={styles.metricsGrid}>
-              {/* Tile 1: TIME (Green) */}
-              <View style={[styles.metricTile, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
-                <View style={styles.metricIconRow}>
-                  <Clock size={16} color={theme.primary} />
-                  <Text style={[styles.metricLabel, { color: theme.subtext }]} numberOfLines={1}>TOTAL TIME</Text>
+              {/* Row 1: TIME & CALORIES */}
+              <View style={styles.metricsRow}>
+                {/* Tile 1: TIME (Green) */}
+                <View style={[styles.metricTile, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
+                  <View style={styles.metricIconRow}>
+                    <Clock size={16} color={theme.primary} />
+                    <Text style={[styles.metricLabel, { color: theme.subtext }]} numberOfLines={1}>TOTAL TIME</Text>
+                  </View>
+                  <Text
+                    style={[styles.metricValue, { color: theme.primary }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {formatTime(durationSeconds)}
+                  </Text>
                 </View>
-                <Text
-                  style={[styles.metricValue, { color: theme.primary }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}
-                >
-                  {formatTime(durationSeconds)}
-                </Text>
+
+                {/* Tile 2: CALORIES (Red) */}
+                <View style={[styles.metricTile, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
+                  <View style={styles.metricIconRow}>
+                    <Flame size={16} color={theme.accentRed} />
+                    <Text style={[styles.metricLabel, { color: theme.subtext }]} numberOfLines={1}>ACTIVE ENERGY</Text>
+                  </View>
+                  <Text
+                    style={[styles.metricValue, { color: theme.accentRed }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {caloriesBurned} <Text style={styles.metricUnit}>KCAL</Text>
+                  </Text>
+                </View>
               </View>
 
-              {/* Tile 2: CALORIES (Red) */}
-              <View style={[styles.metricTile, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
-                <View style={styles.metricIconRow}>
-                  <Flame size={16} color={theme.accentRed} />
-                  <Text style={[styles.metricLabel, { color: theme.subtext }]} numberOfLines={1}>ACTIVE ENERGY</Text>
+              {/* Row 2: VOLUME & SETS */}
+              <View style={styles.metricsRow}>
+                {/* Tile 3: VOLUME (Cyan) */}
+                <View style={[styles.metricTile, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
+                  <View style={styles.metricIconRow}>
+                    <Dumbbell size={16} color={theme.accentCyan} />
+                    <Text style={[styles.metricLabel, { color: theme.subtext }]} numberOfLines={1}>TOTAL VOLUME</Text>
+                  </View>
+                  <Text
+                    style={[styles.metricValue, { color: theme.accentCyan }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {totalVolumeKg.toLocaleString()} <Text style={styles.metricUnit}>KG</Text>
+                  </Text>
                 </View>
-                <Text
-                  style={[styles.metricValue, { color: theme.accentRed }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}
-                >
-                  {caloriesBurned} <Text style={styles.metricUnit}>KCAL</Text>
-                </Text>
-              </View>
 
-              {/* Tile 3: VOLUME (Cyan) */}
-              <View style={[styles.metricTile, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
-                <View style={styles.metricIconRow}>
-                  <Dumbbell size={16} color={theme.accentCyan} />
-                  <Text style={[styles.metricLabel, { color: theme.subtext }]} numberOfLines={1}>TOTAL VOLUME</Text>
+                {/* Tile 4: SETS (Yellow) */}
+                <View style={[styles.metricTile, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
+                  <View style={styles.metricIconRow}>
+                    <CheckCircle2 size={16} color="#FFD60A" />
+                    <Text style={[styles.metricLabel, { color: theme.subtext }]} numberOfLines={1}>COMPLETED SETS</Text>
+                  </View>
+                  <Text
+                    style={[styles.metricValue, { color: '#FFD60A' }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {totalSets} <Text style={styles.metricUnit}>SETS</Text>
+                  </Text>
                 </View>
-                <Text
-                  style={[styles.metricValue, { color: theme.accentCyan }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}
-                >
-                  {totalVolumeKg.toLocaleString()} <Text style={styles.metricUnit}>KG</Text>
-                </Text>
-              </View>
-
-              {/* Tile 4: SETS (Yellow) */}
-              <View style={[styles.metricTile, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
-                <View style={styles.metricIconRow}>
-                  <CheckCircle2 size={16} color="#FFD60A" />
-                  <Text style={[styles.metricLabel, { color: theme.subtext }]} numberOfLines={1}>COMPLETED SETS</Text>
-                </View>
-                <Text
-                  style={[styles.metricValue, { color: '#FFD60A' }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}
-                >
-                  {totalSets} <Text style={styles.metricUnit}>SETS</Text>
-                </Text>
               </View>
             </View>
 
@@ -306,16 +309,20 @@ const styles = StyleSheet.create({
   },
   metricsGrid: {
     width: '100%',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
     marginBottom: 20,
   },
+  metricsRow: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 10,
+  },
   metricTile: {
-    width: (SCREEN_WIDTH - 44 - 10) / 2,
+    flex: 1,
     borderRadius: 18,
     padding: 14,
     borderWidth: 1,
+    justifyContent: 'center',
   },
   metricIconRow: {
     flexDirection: 'row',
