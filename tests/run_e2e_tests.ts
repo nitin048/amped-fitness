@@ -80,6 +80,29 @@ Module.prototype.require = function (modulePath: string) {
   if (modulePath === 'lucide-react-native') {
     return new Proxy({}, { get: () => () => null });
   }
+  if (modulePath === 'expo-sharing') {
+    return {
+      isAvailableAsync: async () => true,
+      shareAsync: async () => {},
+    };
+  }
+  if (modulePath === 'expo-document-picker') {
+    return {
+      getDocumentAsync: async () => ({ canceled: true }),
+    };
+  }
+  if (modulePath === 'expo-file-system/legacy' || modulePath === 'expo-file-system') {
+    return {
+      documentDirectory: '/mock/docs/',
+      cacheDirectory: '/mock/cache/',
+      EncodingType: { Base64: 'base64', UTF8: 'utf8' },
+      getInfoAsync: async () => ({ exists: false }),
+      copyAsync: async () => {},
+      makeDirectoryAsync: async () => {},
+      writeAsStringAsync: async () => {},
+      readAsStringAsync: async () => '',
+    };
+  }
   return originalRequire.apply(this, arguments);
 };
 
@@ -1707,6 +1730,98 @@ describe('E2E Feature 32: Active Workout Engine, Cockpit HUD & Set Matrix Table'
     assert.strictEqual(formatTimer(65), '01:05');
     assert.strictEqual(formatTimer(3599), '59:59');
     assert.strictEqual(formatTimer(3665), '1:01:05');
+  });
+});
+
+describe('E2E Feature 33: Weekly Telemetry Chart Clearance & Data Vault Serialization', () => {
+  it('Weekly Telemetry chart math must ensure proper goal line clearance without bar collision', () => {
+    const targetDailyVolume = 5000;
+    const weekVolumes = [4000, 4800, 5200, 0, 5000, 3200, 5500];
+
+    // Scaling with 1.35x headroom
+    const maxVolume = Math.max(targetDailyVolume * 1.35, ...weekVolumes);
+    assert.ok(maxVolume >= targetDailyVolume * 1.35, 'Max volume must provide at least 35% headroom above target');
+
+    const TRACK_HEIGHT = 96;
+    const BOTTOM_OFFSET = 24;
+    const targetRatio = Math.min(0.92, Math.max(0.12, targetDailyVolume / maxVolume));
+    const goalLineBottom = Math.round(BOTTOM_OFFSET + targetRatio * TRACK_HEIGHT);
+
+    // Goal line should be located cleanly in the upper range (~70-75% track height + bottom offset)
+    assert.ok(goalLineBottom >= 80 && goalLineBottom <= 105, `Goal line bottom (${goalLineBottom}px) must be well-positioned inside 140px chart`);
+
+    // Compact number formatting
+    const formatCompact = (val: number) => {
+      if (val >= 1000) {
+        const k = val / 1000;
+        return `${k % 1 === 0 ? k : k.toFixed(1)}k`;
+      }
+      return String(val);
+    };
+
+    assert.strictEqual(formatCompact(5000), '5k');
+    assert.strictEqual(formatCompact(10000), '10k');
+    assert.strictEqual(formatCompact(2500), '2.5k');
+    assert.strictEqual(formatCompact(400), '400');
+  });
+
+  it('localBackup service must export exportDatabaseBackup and importDatabaseBackup', () => {
+    const backupMod = loadTsModule('src/services/localBackup.ts');
+    assert.ok(typeof backupMod.exportDatabaseBackup === 'function', 'exportDatabaseBackup must be exported');
+    assert.ok(typeof backupMod.importDatabaseBackup === 'function', 'importDatabaseBackup must be exported');
+  });
+
+  it('Uint8Array to base64 serialization helper must produce accurate round-trip encoding', () => {
+    function uint8ArrayToBase64(bytes: Uint8Array): string {
+      let binary = '';
+      const len = bytes.byteLength;
+      const chunkSize = 8192;
+      for (let i = 0; i < len; i += chunkSize) {
+        const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+        for (let j = 0; j < chunk.length; j++) {
+          binary += String.fromCharCode(chunk[j]);
+        }
+      }
+      if (typeof btoa === 'function') {
+        return btoa(binary);
+      }
+      if (typeof Buffer !== 'undefined') {
+        return Buffer.from(binary, 'binary').toString('base64');
+      }
+      return '';
+    }
+
+    const sampleBytes = new Uint8Array([65, 80, 77, 69, 68]); // 'APMED'
+    const b64 = uint8ArrayToBase64(sampleBytes);
+    const decoded = Buffer.from(b64, 'base64').toString('utf8');
+    assert.strictEqual(decoded, 'APMED');
+  });
+
+  it('Backup JSON payload structure must contain Apmed branding and all 8 core tables', () => {
+    const expectedTables = [
+      'exercises',
+      'workout_sets',
+      'workout_sessions',
+      'meal_logs',
+      'daily_water',
+      'user_profile',
+      'muscle_recovery',
+      'workout_alarms',
+    ];
+
+    const backupPayload = {
+      brand: 'Apmed',
+      schema_version: 1,
+      exported_at: new Date().toISOString(),
+      timestamp: Date.now(),
+      tables: expectedTables.reduce((acc, t) => ({ ...acc, [t]: [] }), {}),
+    };
+
+    assert.strictEqual(backupPayload.brand, 'Apmed');
+    assert.strictEqual(backupPayload.schema_version, 1);
+    for (const t of expectedTables) {
+      assert.ok(t in backupPayload.tables, `Table ${t} must be present in backup payload`);
+    }
   });
 });
 

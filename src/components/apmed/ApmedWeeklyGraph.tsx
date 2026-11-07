@@ -97,9 +97,9 @@ export const ApmedWeeklyGraph: React.FC<ApmedWeeklyGraphProps> = React.memo(({
     };
   });
 
-  // Calculate maximums for bar scaling
-  const maxVolume = Math.max(targetDailyVolume * 1.2, ...weekData.map((d) => d.volumeKg));
-  const maxSteps = Math.max(targetDailySteps * 1.2, ...weekData.map((d) => d.steps));
+  // Calculate maximums for bar scaling with 1.35x headroom so goal line and candles never collide
+  const maxVolume = Math.max(targetDailyVolume * 1.35, ...weekData.map((d) => d.volumeKg));
+  const maxSteps = Math.max(targetDailySteps * 1.35, ...weekData.map((d) => d.steps));
   const maxCalories = Math.max(600, ...weekData.map((d) => d.calories));
 
   const getMetricMax = () => {
@@ -155,8 +155,19 @@ export const ApmedWeeklyGraph: React.FC<ApmedWeeklyGraphProps> = React.memo(({
     ).start();
   }, [selectedMetric, todayVolumeKg, todaySteps]);
 
-  // Target baseline line percent
-  const targetPercent = Math.min(95, Math.round((getTargetValue() / getMetricMax()) * 100));
+  // Target baseline line pixel positioning aligned with 96px bar track and 24px bottom offset
+  const TRACK_HEIGHT = 96;
+  const BOTTOM_OFFSET = 24;
+  const targetRatio = Math.min(0.92, Math.max(0.12, getTargetValue() / getMetricMax()));
+  const goalLineBottom = Math.round(BOTTOM_OFFSET + targetRatio * TRACK_HEIGHT);
+
+  const formatCompact = (val: number) => {
+    if (val >= 1000) {
+      const k = val / 1000;
+      return `${k % 1 === 0 ? k : k.toFixed(1)}k`;
+    }
+    return String(val);
+  };
 
   return (
     <View style={[styles.cardContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -228,14 +239,25 @@ export const ApmedWeeklyGraph: React.FC<ApmedWeeklyGraphProps> = React.memo(({
 
       {/* INTERACTIVE 7-DAY BAR CHART CONTAINER */}
       <View style={styles.chartArea}>
-        {/* DOTTED TARGET GUIDELINE */}
-        <View style={[styles.targetGuideLine, { bottom: `${targetPercent}%`, borderColor: `${theme.subtext}40` }]}>
-          <Text style={[styles.targetGuideLabel, { color: theme.subtext }]}>
-            Goal: {getTargetValue()}
-          </Text>
+        {/* DOTTED TARGET GUIDELINE & ANCHORED RIGHT GOAL CAPSULE */}
+        <View style={[styles.targetGuideLineContainer, { bottom: goalLineBottom }]}>
+          <View style={[styles.targetGuideDashedLine, { borderColor: `${theme.subtext}40` }]} />
+          <View
+            style={[
+              styles.targetGuideBadge,
+              {
+                backgroundColor: theme.cardElevated,
+                borderColor: isOled ? '#FFFFFF' : `${activeColor}60`,
+              },
+            ]}
+          >
+            <Text style={[styles.targetGuideBadgeText, { color: isOled ? '#FFFFFF' : activeColor }]}>
+              Goal {formatCompact(getTargetValue())}
+            </Text>
+          </View>
         </View>
 
-        {/* 7 DAY BARS */}
+        {/* 7 DAY BARS (WITH DEDICATED RIGHT GUTTER TO PREVENT ANY OVERLAP) */}
         <View style={styles.barsFlexRow}>
           {weekData.map((d, i) => {
             const isSelected = i === selectedDayIdx;
@@ -379,27 +401,40 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginVertical: 4,
   },
-  targetGuideLine: {
+  targetGuideLineContainer: {
     position: 'absolute',
-    left: 0,
-    right: 0,
+    left: 4,
+    right: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  targetGuideDashedLine: {
+    flex: 1,
     borderTopWidth: 1,
     borderStyle: 'dashed',
-    zIndex: 1,
+    marginRight: 6,
   },
-  targetGuideLabel: {
-    position: 'absolute',
-    right: 0,
-    top: -14,
-    fontSize: 8.5,
-    fontWeight: '700',
+  targetGuideBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  targetGuideBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   barsFlexRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 120,
-    paddingHorizontal: 4,
+    height: 130,
+    paddingLeft: 4,
+    paddingRight: 64, // Dedicated clearance for Goal badge so candles never collide
   },
   barItemTouchArea: {
     flex: 1,
@@ -415,7 +450,7 @@ const styles = StyleSheet.create({
   },
   verticalBarTrack: {
     width: 20,
-    height: 100,
+    height: 96,
     borderRadius: 10,
     overflow: 'hidden',
     justifyContent: 'flex-end',

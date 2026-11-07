@@ -1106,9 +1106,24 @@ const MainScreen = () => {
   };
 
   const handleExportBackup = async () => {
-    const success = await exportDatabaseBackup();
-    if (success) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try {
+      const success = await exportDatabaseBackup();
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert(
+          'Backup Exported',
+          'Your encrypted Apmed workout and nutrition backup has been generated successfully.'
+        );
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert(
+          'Export Notice',
+          'Export was canceled or device sharing was unavailable.'
+        );
+      }
+    } catch (err: any) {
+      console.error('Failed to export backup:', err);
+      Alert.alert('Export Error', err?.message || 'Failed to export backup.');
     }
   };
 
