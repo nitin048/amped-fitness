@@ -10,6 +10,7 @@ import {
   Switch,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {
@@ -201,8 +202,12 @@ export const WorkoutAlarmsModal: React.FC<WorkoutAlarmsModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
@@ -552,6 +557,7 @@ export const WorkoutAlarmsModal: React.FC<WorkoutAlarmsModalProps> = ({
           </ScrollView>
         </View>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

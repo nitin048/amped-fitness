@@ -10,6 +10,8 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Search, X, Check, Globe, Dumbbell, ChevronRight, Sparkles } from 'lucide-react-native';
@@ -73,8 +75,12 @@ export const OnlineExerciseModal: React.FC<OnlineExerciseModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 8 }}>
@@ -274,6 +280,7 @@ export const OnlineExerciseModal: React.FC<OnlineExerciseModalProps> = ({
           )}
         </View>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

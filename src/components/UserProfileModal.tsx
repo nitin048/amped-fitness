@@ -10,6 +10,8 @@ import {
   Dimensions,
   Image,
   Switch,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -316,8 +318,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
@@ -1476,6 +1482,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </View>
         </Modal>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

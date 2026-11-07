@@ -10,6 +10,8 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {
@@ -117,8 +119,12 @@ export const FoodScanConfirmModal: React.FC<FoodScanConfirmModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
@@ -296,6 +302,7 @@ export const FoodScanConfirmModal: React.FC<FoodScanConfirmModalProps> = ({
           ) : null}
         </View>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

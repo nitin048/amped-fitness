@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "com.amped.fitness",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#0B0E14",
         "foregroundImage": "./assets/android-icon-foreground.png",

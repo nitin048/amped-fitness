@@ -9,6 +9,8 @@ import {
   TextInput,
   Alert,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {
@@ -149,28 +151,37 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          {/* MODAL HEADER */}
-          <View style={[styles.modalHeaderRow, { borderBottomColor: theme.border }]}>
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Sparkles size={14} color={theme.primary} />
-                <Text style={[styles.modalEyebrow, { color: theme.primary }]}>CUSTOM WORKOUT BUILDER</Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            {/* MODAL HEADER */}
+            <View style={[styles.modalHeaderRow, { borderBottomColor: theme.border }]}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Sparkles size={14} color={theme.primary} />
+                  <Text style={[styles.modalEyebrow, { color: theme.primary }]}>CUSTOM WORKOUT BUILDER</Text>
+                </View>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Create Routine</Text>
               </View>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Create Routine</Text>
+
+              <TouchableOpacity
+                onPress={onClose}
+                style={[styles.closeBtn, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}
+                activeOpacity={0.7}
+              >
+                <X size={18} color={theme.text} />
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              onPress={onClose}
-              style={[styles.closeBtn, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}
-              activeOpacity={0.7}
+            <ScrollView
+              style={styles.scrollBody}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
             >
-              <X size={18} color={theme.text} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
             {/* 1. ROUTINE NAME & TAGLINE */}
             <View style={styles.sectionBlock}>
               <Text style={[styles.sectionLabel, { color: theme.subtext }]}>ROUTINE NAME *</Text>
@@ -471,7 +482,8 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
