@@ -49,6 +49,12 @@ import {
   calculateAthleteMetrics,
   AthleteCalculatedMetrics,
 } from '../db/database';
+import {
+  heightToCm,
+  cmToDisplayHeight,
+  weightToKg,
+  kgToDisplayWeight,
+} from '../utils/unitConversions';
 
 interface UserProfileModalProps {
   visible: boolean;
@@ -163,15 +169,17 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   useEffect(() => {
     if (visible) {
       const p = getUserProfile();
+      const hUnit = p.heightUnit || 'CM';
+      const wUnit = p.weightUnit || 'KG';
       setName(p.userName || 'Alex Carter');
       setNickname(p.athleteNickname || 'Apex Lifter');
       setGender(p.gender || 'Male');
       setAge(String(p.ageYears || 26));
-      setWeightKg(String(p.bodyWeightKg || 75));
-      setHeightCm(String(p.heightCm || 178));
+      setWeightUnit(wUnit);
+      setHeightUnit(hUnit);
+      setWeightKg(kgToDisplayWeight(p.bodyWeightKg || 75, wUnit));
+      setHeightCm(cmToDisplayHeight(p.heightCm || 178, hUnit));
       setBodyFatPct(String(p.bodyFatPct || 15));
-      setWeightUnit(p.weightUnit || 'KG');
-      setHeightUnit(p.heightUnit || 'CM');
       setAvatarColor(p.avatarColor || '#30D158');
       setImageUri(p.profileImageUri || null);
 
@@ -203,16 +211,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   // Real-time science metrics based on athlete biometrics
   const calculatedMetrics: AthleteCalculatedMetrics = useMemo(() => {
+    const trueHeightCm = heightToCm(heightCm, heightUnit);
+    const trueWeightKg = weightToKg(weightKg, weightUnit);
     return calculateAthleteMetrics({
-      bodyWeightKg: parseFloat(weightKg) || 75,
-      heightCm: parseFloat(heightCm) || 178,
+      bodyWeightKg: trueWeightKg,
+      heightCm: trueHeightCm,
       ageYears: parseInt(age, 10) || 26,
       gender,
       fitnessGoal: selectedGoal,
       experienceLevel: selectedExp,
       weeklyWorkoutDaysTarget: weeklyDays,
     });
-  }, [weightKg, heightCm, age, gender, selectedGoal, selectedExp, weeklyDays]);
+  }, [weightKg, weightUnit, heightCm, heightUnit, age, gender, selectedGoal, selectedExp, weeklyDays]);
 
   const handleApplyScienceTargets = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -265,13 +275,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   const handleSave = () => {
+    const trueWeightKg = weightToKg(weightKg, weightUnit);
+    const trueHeightCm = heightToCm(heightCm, heightUnit);
+
     const updated: Partial<UserProfile> = {
       userName: name.trim() || 'Alex Carter',
       athleteNickname: nickname.trim() || 'Apex Lifter',
       gender,
       ageYears: Math.max(12, Math.min(100, parseInt(age, 10) || 26)),
-      bodyWeightKg: Math.max(30, Math.min(300, parseFloat(weightKg) || 75.0)),
-      heightCm: Math.max(100, Math.min(250, parseFloat(heightCm) || 178.0)),
+      bodyWeightKg: trueWeightKg,
+      heightCm: trueHeightCm,
       bodyFatPct: Math.max(3, Math.min(60, parseFloat(bodyFatPct) || 15.0)),
       weightUnit,
       heightUnit,
@@ -565,7 +578,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       <TouchableOpacity
                         onPress={() => {
                           const next = weightUnit === 'KG' ? 'LBS' : 'KG';
+                          const currentKg = weightToKg(weightKg, weightUnit);
                           setWeightUnit(next);
+                          setWeightKg(kgToDisplayWeight(currentKg, next));
                           Haptics.selectionAsync();
                         }}
                         style={[styles.unitBadge, { borderColor: theme.border, backgroundColor: theme.card }]}
@@ -578,6 +593,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         value={weightKg}
                         onChangeText={setWeightKg}
                         keyboardType="numeric"
+                        placeholder={weightUnit === 'LBS' ? '165' : '75'}
+                        placeholderTextColor={theme.subtext}
                         style={[styles.bigStatInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>{weightUnit}</Text>
@@ -591,7 +608,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       <TouchableOpacity
                         onPress={() => {
                           const next = heightUnit === 'CM' ? 'FT' : 'CM';
+                          const currentCm = heightToCm(heightCm, heightUnit);
                           setHeightUnit(next);
+                          setHeightCm(cmToDisplayHeight(currentCm, next));
                           Haptics.selectionAsync();
                         }}
                         style={[styles.unitBadge, { borderColor: theme.border, backgroundColor: theme.card }]}
@@ -604,6 +623,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         value={heightCm}
                         onChangeText={setHeightCm}
                         keyboardType="numeric"
+                        placeholder={heightUnit === 'FT' ? '5.8' : '178'}
+                        placeholderTextColor={theme.subtext}
                         style={[styles.bigStatInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>{heightUnit}</Text>

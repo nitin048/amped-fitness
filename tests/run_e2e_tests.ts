@@ -121,6 +121,7 @@ const freeExerciseModule = loadTsModule('src/services/freeExerciseApi.ts');
 const weatherModule = loadTsModule('src/services/weatherService.ts');
 const strengthModule = loadTsModule('src/utils/strengthFormulas.ts');
 const openFoodModule = loadTsModule('src/services/openFoodApi.ts');
+const unitConversionsModule = loadTsModule('src/utils/unitConversions.ts');
 
 /* =========================================================================
    SUITE 1: DATABASE INITIALIZATION & SCHEMA MIGRATIONS
@@ -1042,6 +1043,122 @@ describe('E2E Feature 23: Custom Workout Routine Builder & Persistence', () => {
     assert.strictEqual(res, true, 'Safe deletion of missing ID should not throw');
   });
 });
+
+/* =========================================================================
+   SUITE 24: BIOMETRIC UNIT CONVERSIONS & PROFILE HEIGHT/WEIGHT PERSISTENCE
+========================================================================= */
+describe('E2E Feature 24: Biometric Unit Conversions (Height FT <-> CM & Weight LBS <-> KG)', () => {
+  const {
+    heightToCm,
+    cmToDisplayHeight,
+    weightToKg,
+    kgToDisplayWeight,
+    stepHeight,
+    stepWeight,
+  } = unitConversionsModule;
+
+  it('heightToCm must convert 5.8 FT to ~173 cm and NEVER clamp to 100 cm', () => {
+    const cm = heightToCm('5.8', 'FT');
+    assert.strictEqual(cm, 173, '5.8 FT must be 173 cm');
+    assert.notStrictEqual(cm, 100, '5.8 FT must NEVER be clamped to 100 cm');
+  });
+
+  it('heightToCm must accurately convert common feet.inch formats', () => {
+    assert.strictEqual(heightToCm('5.10', 'FT'), 178, '5.10 FT must be 178 cm');
+    assert.strictEqual(heightToCm('5.11', 'FT'), 180, '5.11 FT must be 180 cm');
+    assert.strictEqual(heightToCm('6.0', 'FT'), 183, '6.0 FT must be 183 cm');
+    assert.strictEqual(heightToCm('6', 'FT'), 183, '6 FT must be 183 cm');
+    assert.strictEqual(heightToCm('5\'8"', 'FT'), 173, '5\'8" must be 173 cm');
+    assert.strictEqual(heightToCm('178', 'CM'), 178, '178 CM must be 178 cm');
+  });
+
+  it('cmToDisplayHeight must accurately convert cm to feet.inches string', () => {
+    assert.strictEqual(cmToDisplayHeight(173, 'FT'), '5.8');
+    assert.strictEqual(cmToDisplayHeight(178, 'FT'), '5.10');
+    assert.strictEqual(cmToDisplayHeight(180, 'FT'), '5.11');
+    assert.strictEqual(cmToDisplayHeight(183, 'FT'), '6.0');
+    assert.strictEqual(cmToDisplayHeight(178, 'CM'), '178');
+  });
+
+  it('height biometric roundtrip must be bijective for athlete profiles', () => {
+    // 5.8 -> 173 cm -> 5.8
+    const cm58 = heightToCm('5.8', 'FT');
+    const display58 = cmToDisplayHeight(cm58, 'FT');
+    assert.strictEqual(display58, '5.8');
+
+    // 5.10 -> 178 cm -> 5.10
+    const cm510 = heightToCm('5.10', 'FT');
+    const display510 = cmToDisplayHeight(cm510, 'FT');
+    assert.strictEqual(display510, '5.10');
+  });
+
+  it('weight conversion between KG and LBS must be accurate and symmetric', () => {
+    // 75 kg -> 165.3 lbs -> 75 kg
+    const lbs = kgToDisplayWeight(75, 'LBS');
+    assert.strictEqual(lbs, '165.3');
+    const kg = weightToKg('165.3', 'LBS');
+    assert.strictEqual(kg, 75);
+
+    // KG mode
+    assert.strictEqual(kgToDisplayWeight(80, 'KG'), '80');
+    assert.strictEqual(weightToKg('80', 'KG'), 80);
+  });
+
+  it('stepHeight and stepWeight must correctly increment and decrement in respective units', () => {
+    // In FT mode, stepHeight steps by 1 inch
+    assert.strictEqual(stepHeight('5.8', 'FT', 1), '5.9');
+    assert.strictEqual(stepHeight('5.8', 'FT', -1), '5.7');
+    assert.strictEqual(stepHeight('5.11', 'FT', 1), '6.0');
+
+    // In CM mode, stepHeight steps by 1 cm
+    assert.strictEqual(stepHeight('178', 'CM', 1), '179');
+    assert.strictEqual(stepHeight('178', 'CM', -1), '177');
+
+    // In LBS mode, stepWeight steps by 1 lb
+    assert.strictEqual(stepWeight('165', 'LBS', 1), '166');
+
+    // In KG mode, stepWeight steps by 0.5 kg
+    assert.strictEqual(stepWeight('75', 'KG', 0.5), '75.5');
+  });
+
+  it('end-to-end profile save with FT height: entering 5.8 FT must save 173 cm and display 5.8 FT', () => {
+    // Simulate athlete entering 5.8 in FT mode
+    const inputHeight = '5.8';
+    const inputUnit = 'FT';
+    const cmToSave = heightToCm(inputHeight, inputUnit);
+
+    dbModule.saveUserProfile({
+      userName: 'Athlete In FT',
+      heightCm: cmToSave,
+      heightUnit: inputUnit,
+      bodyWeightKg: 75,
+      weightUnit: 'KG',
+    });
+
+    const retrieved = dbModule.getUserProfile();
+    assert.strictEqual(retrieved.heightCm, 173, 'Saved height_cm must be 173 cm, NOT 100 or 5.8');
+    assert.strictEqual(retrieved.heightUnit, 'FT');
+
+    // When athlete profile modal opens, format retrieved height for display
+    const displayedHeight = cmToDisplayHeight(retrieved.heightCm, retrieved.heightUnit);
+    assert.strictEqual(displayedHeight, '5.8', 'Athlete profile must display 5.8 FT, NEVER 100 FT');
+
+    // Metabolic science calculations must be healthy
+    const metrics = dbModule.calculateAthleteMetrics({
+      bodyWeightKg: retrieved.bodyWeightKg,
+      heightCm: retrieved.heightCm,
+      ageYears: retrieved.ageYears,
+      gender: retrieved.gender,
+      fitnessGoal: retrieved.fitnessGoal,
+      experienceLevel: retrieved.experienceLevel,
+      weeklyWorkoutDaysTarget: retrieved.weeklyWorkoutDaysTarget,
+    });
+
+    assert.ok(metrics.bmr > 1600 && metrics.bmr < 1850, `BMR sensible: ${metrics.bmr}`);
+    assert.ok(metrics.bmi > 24 && metrics.bmi < 26, `BMI sensible: ${metrics.bmi}`);
+  });
+});
+
 
 
 

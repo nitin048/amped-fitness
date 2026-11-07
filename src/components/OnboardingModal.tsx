@@ -39,6 +39,14 @@ import {
   calculateAthleteMetrics,
   AthleteCalculatedMetrics,
 } from '../db/database';
+import {
+  heightToCm,
+  cmToDisplayHeight,
+  weightToKg,
+  kgToDisplayWeight,
+  stepHeight,
+  stepWeight,
+} from '../utils/unitConversions';
 import { AmpedBrandLogo } from './AmpedBrandLogo';
 
 interface OnboardingModalProps {
@@ -177,15 +185,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   };
 
   // Step 2 live BMI & BMR preview
-  const parsedWeight = parseFloat(weightKg) || 75;
-  const parsedHeight = parseFloat(heightCm) || 178;
+  const trueWeightKg = useMemo(() => weightToKg(weightKg, weightUnit), [weightKg, weightUnit]);
+  const trueHeightCm = useMemo(() => heightToCm(heightCm, heightUnit), [heightCm, heightUnit]);
   const parsedAge = parseInt(age, 10) || 26;
 
   const bmi = useMemo(() => {
-    const hM = parsedHeight / 100;
+    const hM = trueHeightCm / 100;
     if (hM <= 0) return 0;
-    return +(parsedWeight / (hM * hM)).toFixed(1);
-  }, [parsedWeight, parsedHeight]);
+    return +(trueWeightKg / (hM * hM)).toFixed(1);
+  }, [trueWeightKg, trueHeightCm]);
 
   const bmiCategory = useMemo(() => {
     if (bmi < 18.5) return { label: 'Underweight', color: '#00F0FF' };
@@ -202,29 +210,27 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   };
 
   const adjustWeight = (delta: number) => {
-    const next = Math.max(35, Math.min(250, +(parsedWeight + delta).toFixed(1)));
-    setWeightKg(String(next));
+    setWeightKg(stepWeight(weightKg, weightUnit, delta));
     Haptics.selectionAsync();
   };
 
   const adjustHeight = (delta: number) => {
-    const next = Math.max(120, Math.min(230, Math.round(parsedHeight + delta)));
-    setHeightCm(String(next));
+    setHeightCm(stepHeight(heightCm, heightUnit, delta));
     Haptics.selectionAsync();
   };
 
   // Science metrics calculation
   const calculatedMetrics: AthleteCalculatedMetrics = useMemo(() => {
     return calculateAthleteMetrics({
-      bodyWeightKg: parsedWeight,
-      heightCm: parsedHeight,
+      bodyWeightKg: trueWeightKg,
+      heightCm: trueHeightCm,
       ageYears: parsedAge,
       gender,
       fitnessGoal: selectedGoal,
       experienceLevel: selectedExp,
       weeklyWorkoutDaysTarget: weeklyDays,
     });
-  }, [parsedWeight, parsedHeight, parsedAge, gender, selectedGoal, selectedExp, weeklyDays]);
+  }, [trueWeightKg, trueHeightCm, parsedAge, gender, selectedGoal, selectedExp, weeklyDays]);
 
   const handleNextStep = () => {
     Haptics.selectionAsync();
@@ -242,8 +248,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       athleteNickname: nickname.trim() || 'Apex Lifter',
       gender,
       ageYears: parsedAge,
-      bodyWeightKg: parsedWeight,
-      heightCm: parsedHeight,
+      bodyWeightKg: trueWeightKg,
+      heightCm: trueHeightCm,
       weightUnit,
       heightUnit,
       fitnessGoal: selectedGoal,
@@ -580,7 +586,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={[styles.fieldLabel, { color: theme.subtext }]}>BODY WEIGHT</Text>
                       <TouchableOpacity
-                        onPress={() => setWeightUnit((prev) => (prev === 'KG' ? 'LBS' : 'KG'))}
+                        onPress={() => {
+                          const next = weightUnit === 'KG' ? 'LBS' : 'KG';
+                          const currentKg = weightToKg(weightKg, weightUnit);
+                          setWeightUnit(next);
+                          setWeightKg(kgToDisplayWeight(currentKg, next));
+                          Haptics.selectionAsync();
+                        }}
                         style={[styles.unitToggleBadge, { borderColor: theme.border, backgroundColor: theme.card }]}
                       >
                         <Text style={[styles.unitToggleText, { color: theme.primary }]}>{weightUnit}</Text>
@@ -589,7 +601,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
                     <View style={styles.stepperContainer}>
                       <TouchableOpacity
-                        onPress={() => adjustWeight(-0.5)}
+                        onPress={() => adjustWeight(weightUnit === 'LBS' ? -1 : -0.5)}
                         style={[styles.stepperBtnMini, { backgroundColor: theme.card, borderColor: theme.border }]}
                       >
                         <Minus size={14} color={theme.text} />
@@ -600,13 +612,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                           value={weightKg}
                           onChangeText={setWeightKg}
                           keyboardType="numeric"
+                          placeholder={weightUnit === 'LBS' ? '165' : '75'}
+                          placeholderTextColor={theme.subtext}
                           style={[styles.bigStatInput, { color: theme.text }]}
                         />
                         <Text style={[styles.statUnit, { color: theme.subtext }]}>{weightUnit}</Text>
                       </View>
 
                       <TouchableOpacity
-                        onPress={() => adjustWeight(0.5)}
+                        onPress={() => adjustWeight(weightUnit === 'LBS' ? 1 : 0.5)}
                         style={[styles.stepperBtnMini, { backgroundColor: theme.card, borderColor: theme.border }]}
                       >
                         <Plus size={14} color={theme.text} />
@@ -619,7 +633,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={[styles.fieldLabel, { color: theme.subtext }]}>HEIGHT</Text>
                       <TouchableOpacity
-                        onPress={() => setHeightUnit((prev) => (prev === 'CM' ? 'FT' : 'CM'))}
+                        onPress={() => {
+                          const next = heightUnit === 'CM' ? 'FT' : 'CM';
+                          const currentCm = heightToCm(heightCm, heightUnit);
+                          setHeightUnit(next);
+                          setHeightCm(cmToDisplayHeight(currentCm, next));
+                          Haptics.selectionAsync();
+                        }}
                         style={[styles.unitToggleBadge, { borderColor: theme.border, backgroundColor: theme.card }]}
                       >
                         <Text style={[styles.unitToggleText, { color: theme.primary }]}>{heightUnit}</Text>
@@ -639,6 +659,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                           value={heightCm}
                           onChangeText={setHeightCm}
                           keyboardType="numeric"
+                          placeholder={heightUnit === 'FT' ? '5.8' : '178'}
+                          placeholderTextColor={theme.subtext}
                           style={[styles.bigStatInput, { color: theme.text }]}
                         />
                         <Text style={[styles.statUnit, { color: theme.subtext }]}>{heightUnit}</Text>
