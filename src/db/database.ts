@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { WorkoutRoutine } from './routines';
 
 // Open local on-device database synchronously (0ms latency)
 export const db = SQLite.openDatabaseSync('amped.db');
@@ -301,6 +302,19 @@ export const initLocalDatabase = () => {
       notes TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS custom_routines (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      tagline TEXT NOT NULL,
+      split TEXT NOT NULL,
+      icon TEXT DEFAULT '⚡',
+      estimated_minutes INTEGER DEFAULT 45,
+      difficulty TEXT DEFAULT 'Intermediate',
+      target_muscles_json TEXT NOT NULL,
+      exercise_ids_json TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+
     -- Performance Indexes
     CREATE INDEX IF NOT EXISTS idx_workout_sets_exercise ON workout_sets(exercise_id);
     CREATE INDEX IF NOT EXISTS idx_workout_sets_completed ON workout_sets(completed_at);
@@ -309,6 +323,7 @@ export const initLocalDatabase = () => {
     CREATE INDEX IF NOT EXISTS idx_step_logs_date ON step_logs(date_str);
     CREATE INDEX IF NOT EXISTS idx_wellness_date ON wellness_biometrics(date_str);
     CREATE INDEX IF NOT EXISTS idx_env_logs_date ON environmental_logs(date_str);
+    CREATE INDEX IF NOT EXISTS idx_custom_routines_created ON custom_routines(created_at);
   `);
 
   // Migrations for columns
@@ -1867,4 +1882,71 @@ export const getRecoveryTrends = (days: number = 7): RecoveryTrendPoint[] => {
   }
 
   return result;
+};
+
+export const getCustomRoutines = (): WorkoutRoutine[] => {
+  try {
+    const rows = db.getAllSync<{
+      id: string;
+      name: string;
+      tagline: string;
+      split: string;
+      icon: string;
+      estimated_minutes: number;
+      difficulty: string;
+      target_muscles_json: string;
+      exercise_ids_json: string;
+      created_at: number;
+    }>('SELECT * FROM custom_routines ORDER BY created_at DESC');
+
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      tagline: r.tagline,
+      split: r.split as any,
+      icon: r.icon || '⚡',
+      estimatedMinutes: r.estimated_minutes || 45,
+      difficulty: r.difficulty as any,
+      targetMuscles: JSON.parse(r.target_muscles_json || '[]'),
+      exerciseIds: JSON.parse(r.exercise_ids_json || '[]'),
+      isCustom: true,
+    }));
+  } catch {
+    return [];
+  }
+};
+
+export const saveCustomRoutine = (routine: Omit<WorkoutRoutine, 'isCustom'>): WorkoutRoutine => {
+  const id = routine.id && routine.id.startsWith('custom_') ? routine.id : `custom_routine_${Date.now()}`;
+  db.runSync(
+    `INSERT OR REPLACE INTO custom_routines (
+      id, name, tagline, split, icon, estimated_minutes, difficulty, target_muscles_json, exercise_ids_json, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      routine.name.trim(),
+      routine.tagline ? routine.tagline.trim() : 'Custom User Training Routine',
+      routine.split || 'FULL_BODY',
+      routine.icon || '⚡',
+      routine.estimatedMinutes || 45,
+      routine.difficulty || 'Intermediate',
+      JSON.stringify(routine.targetMuscles || []),
+      JSON.stringify(routine.exerciseIds || []),
+      Date.now(),
+    ]
+  );
+  return {
+    ...routine,
+    id,
+    isCustom: true,
+  };
+};
+
+export const deleteCustomRoutine = (id: string): boolean => {
+  try {
+    db.runSync('DELETE FROM custom_routines WHERE id = ?', [id]);
+    return true;
+  } catch {
+    return false;
+  }
 };

@@ -8,6 +8,7 @@ export interface WorkoutRoutine {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   targetMuscles: string[];
   exerciseIds: string[];
+  isCustom?: boolean;
 }
 
 export const PRESET_ROUTINES: WorkoutRoutine[] = [

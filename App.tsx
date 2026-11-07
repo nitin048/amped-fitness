@@ -35,7 +35,9 @@ import {
   getExerciseHistorySummary,
   ExerciseHistorySummary,
   calculate1RM,
-  saveRecoverySettings
+  saveRecoverySettings,
+  getCustomRoutines,
+  deleteCustomRoutine
 } from './src/db/database';
 import { ThemeProvider, useTheme, THEMES, ThemeName } from './src/theme/ThemeContext';
 import { useGymSensors } from './src/hooks/useGymSensors';
@@ -50,6 +52,7 @@ import { AppleActivityRings } from './src/components/AppleActivityRings';
 import { OlympicPlateRack } from './src/components/OlympicPlateRack';
 import { AppleRestTimer } from './src/components/AppleRestTimer';
 import { PRESET_ROUTINES, WorkoutRoutine } from './src/db/routines';
+import { CustomRoutineModal } from './src/components/CustomRoutineModal';
 import { WorkoutSummaryModal } from './src/components/WorkoutSummaryModal';
 import { UserProfileModal } from './src/components/UserProfileModal';
 import { DailyTargetsModal } from './src/components/DailyTargetsModal';
@@ -204,6 +207,9 @@ const MainScreen = () => {
   const [selectedSplitFilter, setSelectedSplitFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedRoutine, setSelectedRoutine] = useState<WorkoutRoutine | null>(PRESET_ROUTINES[0]);
+  const [customRoutines, setCustomRoutines] = useState<WorkoutRoutine[]>([]);
+  const [showCustomRoutineModal, setShowCustomRoutineModal] = useState<boolean>(false);
+  const [routineFilterTab, setRoutineFilterTab] = useState<'ALL' | 'PRESET' | 'CUSTOM'>('ALL');
   const [selectedEx, setSelectedEx] = useState<Exercise | null>(null);
   const [currentSetNumber, setCurrentSetNumber] = useState<number>(1);
   const [weightKg, setWeightKg] = useState<number>(80);
@@ -344,6 +350,7 @@ const MainScreen = () => {
 
     const pastSessions = getRecentWorkoutSessions(10);
     setRecentSessions(pastSessions);
+    setCustomRoutines(getCustomRoutines());
 
     setTodayWaterMl(getTodayWaterMl());
     setWeeklyConsistencyState(getWeeklyConsistency(prof.weeklyWorkoutDaysTarget || 5));
@@ -454,6 +461,44 @@ const MainScreen = () => {
       { step: '3', label: 'Potentiation', pct: '85%', weight: w3, reps: 2, tag: 'WARMUP' as const, note: 'Heavy prime without fatigue' },
     ];
   }, [weightKg]);
+
+  // Merged available routines (Custom User Routines + Science Presets)
+  const allAvailableRoutines = useMemo(() => [...customRoutines, ...PRESET_ROUTINES], [customRoutines]);
+  const displayedRoutines = useMemo(() => {
+    if (routineFilterTab === 'PRESET') return PRESET_ROUTINES;
+    if (routineFilterTab === 'CUSTOM') return customRoutines;
+    return allAvailableRoutines;
+  }, [routineFilterTab, allAvailableRoutines, customRoutines]);
+
+  const handleDeleteCustomRoutine = (routine: WorkoutRoutine) => {
+    Alert.alert(
+      'Delete Routine',
+      `Delete "${routine.name}"? This custom routine will be permanently removed.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            const ok = deleteCustomRoutine(routine.id);
+            if (ok) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              setCustomRoutines(getCustomRoutines());
+              if (selectedRoutine?.id === routine.id) {
+                setSelectedRoutine(PRESET_ROUTINES[0]);
+              }
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCustomRoutineCreated = (newRoutine: WorkoutRoutine) => {
+    setCustomRoutines(getCustomRoutines());
+    setSelectedRoutine(newRoutine);
+    setRoutineFilterTab('CUSTOM');
+  };
 
   // Routine Navigator for Active Workout Session
   const currentRoutineExIndex = useMemo(() => {
@@ -1859,61 +1904,257 @@ const MainScreen = () => {
                   </View>
                 </TouchableOpacity>
 
-                {/* 3. WORKOUT ROUTINES (CLEAN VERTICAL CARDS - HEVY STYLE) */}
+                {/* 3. WORKOUT ROUTINES (SCIENCE PRESETS & CUSTOM BUILDER) */}
                 <View style={{ marginBottom: 20 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <Text style={{ fontSize: 12, fontWeight: '900', color: theme.subtext, letterSpacing: 0.8 }}>
-                      SCIENCE-BASED ROUTINES ({PRESET_ROUTINES.length})
-                    </Text>
-                    <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '700' }}>
-                      1-Tap Start
-                    </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <View>
+                      <Text style={{ fontSize: 13, fontWeight: '900', color: theme.text, letterSpacing: 0.6 }}>
+                        TRAINING ROUTINES
+                      </Text>
+                      <Text style={{ fontSize: 11, color: theme.subtext, marginTop: 1 }}>
+                        {displayedRoutines.length} routine{displayedRoutines.length !== 1 ? 's' : ''} available
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setShowCustomRoutineModal(true);
+                      }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 5,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 14,
+                        backgroundColor: `${theme.primary}20`,
+                        borderWidth: 1,
+                        borderColor: `${theme.primary}40`,
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Plus size={13} color={theme.primary} strokeWidth={2.5} />
+                      <Text style={{ fontSize: 12, fontWeight: '800', color: theme.primary }}>
+                        New Routine
+                      </Text>
+                    </TouchableOpacity>
                   </View>
 
-                  <View style={{ gap: 10 }}>
-                    {PRESET_ROUTINES.map((routine) => (
-                      <TouchableOpacity
-                        key={routine.id}
-                        onPress={() => handleStartWorkout(routine)}
-                        style={[
-                          styles.appleCard,
-                          {
-                            backgroundColor: theme.card,
-                            borderColor: theme.border,
-                            padding: 16,
-                            marginBottom: 0,
-                          },
-                        ]}
-                        activeOpacity={0.85}
+                  {/* ROUTINE FILTER PILLS: ALL | PRESETS | MY CUSTOM */}
+                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setRoutineFilterTab('ALL');
+                      }}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 12,
+                        backgroundColor: routineFilterTab === 'ALL' ? theme.primary : theme.cardElevated,
+                        borderWidth: 1,
+                        borderColor: routineFilterTab === 'ALL' ? theme.primary : theme.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: '800',
+                          color: routineFilterTab === 'ALL' ? theme.primaryText : theme.subtext,
+                        }}
                       >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <View style={{ flex: 1, paddingRight: 10 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                              <Text style={{ fontSize: 15, fontWeight: '900', color: theme.text }}>
-                                {routine.name}
-                              </Text>
-                              <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, backgroundColor: `${theme.primary}20` }}>
-                                <Text style={{ fontSize: 10, fontWeight: '800', color: theme.primary }}>
-                                  {routine.estimatedMinutes} MIN
+                        All ({allAvailableRoutines.length})
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setRoutineFilterTab('PRESET');
+                      }}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 12,
+                        backgroundColor: routineFilterTab === 'PRESET' ? theme.primary : theme.cardElevated,
+                        borderWidth: 1,
+                        borderColor: routineFilterTab === 'PRESET' ? theme.primary : theme.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: '800',
+                          color: routineFilterTab === 'PRESET' ? theme.primaryText : theme.subtext,
+                        }}
+                      >
+                        Presets ({PRESET_ROUTINES.length})
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setRoutineFilterTab('CUSTOM');
+                      }}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 12,
+                        backgroundColor: routineFilterTab === 'CUSTOM' ? theme.primary : theme.cardElevated,
+                        borderWidth: 1,
+                        borderColor: routineFilterTab === 'CUSTOM' ? theme.primary : theme.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: '800',
+                          color: routineFilterTab === 'CUSTOM' ? theme.primaryText : theme.subtext,
+                        }}
+                      >
+                        My Custom ({customRoutines.length})
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* ROUTINES LIST OR EMPTY STATE */}
+                  {displayedRoutines.length === 0 ? (
+                    <View
+                      style={[
+                        styles.appleCard,
+                        {
+                          backgroundColor: theme.card,
+                          borderColor: theme.border,
+                          alignItems: 'center',
+                          paddingVertical: 28,
+                          paddingHorizontal: 20,
+                          marginBottom: 0,
+                        },
+                      ]}
+                    >
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          backgroundColor: `${theme.primary}15`,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: 12,
+                        }}
+                      >
+                        <Sparkles size={24} color={theme.primary} />
+                      </View>
+                      <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text, marginBottom: 4 }}>
+                        No Custom Routines Yet
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: theme.subtext,
+                          textAlign: 'center',
+                          lineHeight: 18,
+                          marginBottom: 16,
+                          maxWidth: 280,
+                        }}
+                      >
+                        Build a personalized routine tailored to your weekly split, favorite movements, and target duration.
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                          setShowCustomRoutineModal(true);
+                        }}
+                        style={{
+                          paddingHorizontal: 18,
+                          paddingVertical: 10,
+                          borderRadius: 14,
+                          backgroundColor: theme.primary,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <Plus size={14} color={theme.primaryText} strokeWidth={2.5} />
+                        <Text style={{ fontSize: 13, fontWeight: '900', color: theme.primaryText }}>
+                          Create Your First Routine
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View style={{ gap: 10 }}>
+                      {displayedRoutines.map((routine) => (
+                        <TouchableOpacity
+                          key={routine.id}
+                          onPress={() => handleStartWorkout(routine)}
+                          style={[
+                            styles.appleCard,
+                            {
+                              backgroundColor: theme.card,
+                              borderColor: theme.border,
+                              padding: 16,
+                              marginBottom: 0,
+                            },
+                          ]}
+                          activeOpacity={0.85}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <View style={{ flex: 1, paddingRight: 10 }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                                <Text style={{ fontSize: 15, fontWeight: '900', color: theme.text }}>
+                                  {routine.name}
                                 </Text>
+                                <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, backgroundColor: `${theme.primary}20` }}>
+                                  <Text style={{ fontSize: 10, fontWeight: '800', color: theme.primary }}>
+                                    {routine.estimatedMinutes} MIN
+                                  </Text>
+                                </View>
+                                {routine.isCustom && (
+                                  <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: '#FFD60A25' }}>
+                                    <Text style={{ fontSize: 9, fontWeight: '900', color: '#FFD60A', letterSpacing: 0.5 }}>
+                                      CUSTOM
+                                    </Text>
+                                  </View>
+                                )}
+                              </View>
+                              <Text numberOfLines={1} style={{ fontSize: 12, color: theme.subtext }}>
+                                {routine.tagline}
+                              </Text>
+                              <Text style={{ fontSize: 11, color: theme.tertiary, marginTop: 4, fontWeight: '600' }}>
+                                {routine.exerciseIds.length} Exercises • {routine.difficulty}
+                              </Text>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              {routine.isCustom && (
+                                <TouchableOpacity
+                                  onPress={() => handleDeleteCustomRoutine(routine)}
+                                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                  style={{
+                                    width: 34,
+                                    height: 34,
+                                    borderRadius: 10,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: `${theme.danger}15`,
+                                    borderWidth: 1,
+                                    borderColor: `${theme.danger}30`,
+                                  }}
+                                >
+                                  <Trash2 size={15} color={theme.danger} />
+                                </TouchableOpacity>
+                              )}
+                              <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Play size={12} color={theme.primaryText} fill={theme.primaryText} />
+                                <Text style={{ fontSize: 12, fontWeight: '900', color: theme.primaryText }}>START</Text>
                               </View>
                             </View>
-                            <Text numberOfLines={1} style={{ fontSize: 12, color: theme.subtext }}>
-                              {routine.tagline}
-                            </Text>
-                            <Text style={{ fontSize: 11, color: theme.tertiary, marginTop: 4, fontWeight: '600' }}>
-                              {routine.exerciseIds.length} Exercises • {routine.difficulty}
-                            </Text>
                           </View>
-
-                          <View style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, backgroundColor: theme.primary, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                            <Play size={12} color={theme.primaryText} fill={theme.primaryText} />
-                            <Text style={{ fontSize: 12, fontWeight: '900', color: theme.primaryText }}>START</Text>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
 
                 {/* 4. EXERCISE LIBRARY (SEARCH & MOVEMENT GUIDE) */}
@@ -3875,6 +4116,15 @@ const MainScreen = () => {
         }}
       />
 
+      {/* CUSTOM ROUTINE BUILDER MODAL */}
+      <CustomRoutineModal
+        visible={showCustomRoutineModal}
+        theme={theme}
+        exercises={exercises}
+        onClose={() => setShowCustomRoutineModal(false)}
+        onRoutineCreated={handleCustomRoutineCreated}
+      />
+
       {/* WORKOUT SUMMARY CELEBRATION MODAL (ON END WORKOUT) */}
       <WorkoutSummaryModal
         visible={showSummaryModal}
@@ -5053,12 +5303,12 @@ const styles = StyleSheet.create({
   },
   stepperBox: {
     flex: 1,
-    borderRadius: 18,
-    padding: 10,
+    borderRadius: 20,
+    padding: 12,
     borderWidth: 1,
   },
   stepperHeader: {
-    fontSize: 9,
+    fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.8,
     marginBottom: 8,
@@ -5069,9 +5319,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stepperBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -5079,13 +5329,13 @@ const styles = StyleSheet.create({
   stepperDisplay: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 2,
+    gap: 3,
   },
   stepperInput: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '900',
     textAlign: 'center',
-    minWidth: 38,
+    minWidth: 42,
   },
   stepperUnit: {
     fontSize: 11,
@@ -5652,8 +5902,8 @@ const styles = StyleSheet.create({
   },
   quickBumpPill: {
     flex: 1,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingVertical: 7,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -5666,9 +5916,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     marginBottom: 8,
   },

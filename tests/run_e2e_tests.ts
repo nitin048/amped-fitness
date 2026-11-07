@@ -991,4 +991,57 @@ describe('E2E Feature 22: Persistent Selections & State Synchronization across 4
   });
 });
 
+/* =========================================================================
+   SUITE 23: CUSTOM WORKOUT ROUTINES PERSISTENCE & LIFECYCLE
+========================================================================= */
+describe('E2E Feature 23: Custom Workout Routine Builder & Persistence', () => {
+  it('saveCustomRoutine should persist custom routine with exercises, split & duration', () => {
+    const custom = dbModule.saveCustomRoutine({
+      id: 'custom_chest_arms_special',
+      name: 'Chest & Arms Hypertrophy Blast',
+      tagline: 'Custom peak volume bench and curl supersets',
+      split: 'PUSH',
+      icon: '💪',
+      estimatedMinutes: 50,
+      difficulty: 'Advanced',
+      targetMuscles: ['CHEST', 'ARMS'],
+      exerciseIds: ['bench_press', 'incline_dumbbell_press', 'barbell_curl'],
+    });
+
+    assert.ok(custom, 'Returned routine must be defined');
+    assert.strictEqual(custom.id, 'custom_chest_arms_special');
+    assert.strictEqual(custom.name, 'Chest & Arms Hypertrophy Blast');
+    assert.strictEqual(custom.isCustom, true);
+    assert.strictEqual(custom.estimatedMinutes, 50);
+    assert.deepStrictEqual(custom.exerciseIds, ['bench_press', 'incline_dumbbell_press', 'barbell_curl']);
+  });
+
+  it('getCustomRoutines should retrieve all custom routines with parsed JSON fields', () => {
+    const list = dbModule.getCustomRoutines();
+    assert.ok(Array.isArray(list), 'Must return an array');
+    const created = list.find((r: any) => r.id === 'custom_chest_arms_special');
+    assert.ok(created, 'Saved routine must exist in getCustomRoutines list');
+    assert.strictEqual(created.name, 'Chest & Arms Hypertrophy Blast');
+    assert.strictEqual(created.isCustom, true);
+    assert.strictEqual(created.split, 'PUSH');
+    assert.strictEqual(created.exerciseIds.length, 3);
+    assert.ok(created.targetMuscles.includes('CHEST'));
+  });
+
+  it('deleteCustomRoutine should remove custom routine from SQLite', () => {
+    const deleted = dbModule.deleteCustomRoutine('custom_chest_arms_special');
+    assert.strictEqual(deleted, true, 'Delete operation must return true');
+
+    const listAfter = dbModule.getCustomRoutines();
+    const stillExists = listAfter.some((r: any) => r.id === 'custom_chest_arms_special');
+    assert.strictEqual(stillExists, false, 'Deleted routine must no longer be present');
+  });
+
+  it('deleteCustomRoutine edge case: deleting non-existent ID should handle gracefully', () => {
+    const res = dbModule.deleteCustomRoutine('non_existent_routine_99999');
+    assert.strictEqual(res, true, 'Safe deletion of missing ID should not throw');
+  });
+});
+
+
 
