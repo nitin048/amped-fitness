@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   X,
@@ -64,6 +65,7 @@ export const QuickToolsModal: React.FC<QuickToolsModalProps> = ({
   onOpenEquipmentScanner,
   onOpenStrength,
 }) => {
+  const insets = useSafeAreaInsets();
   const activeAlarms = alarms.filter((a) => a.isActive);
   const nextAlarm = activeAlarms[0];
 
@@ -74,9 +76,23 @@ export const QuickToolsModal: React.FC<QuickToolsModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.sheetContainer,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -342,11 +358,13 @@ const styles = StyleSheet.create({
     maxHeight: '85%',
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingHorizontal: 18,
     paddingTop: 18,
-    paddingBottom: 24,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   Zap,
@@ -34,6 +35,7 @@ export const CnsTapTestModal: React.FC<CnsTapTestModalProps> = ({
   onClose,
   onTestComplete,
 }) => {
+  const insets = useSafeAreaInsets();
   const [gameState, setGameState] = useState<'IDLE' | 'RUNNING' | 'FINISHED'>('IDLE');
   const [timeLeft, setTimeLeft] = useState<number>(10);
   const [tapCount, setTapCount] = useState<number>(0);
@@ -150,9 +152,23 @@ export const CnsTapTestModal: React.FC<CnsTapTestModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalCard, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.modalCard,
+            {
+              backgroundColor: theme.bg,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={[styles.headerRow, { borderBottomColor: theme.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -295,9 +311,11 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
-    paddingBottom: 24,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

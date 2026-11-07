@@ -9,6 +9,7 @@ import {
   Linking,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ShieldCheck,
   X,
@@ -40,6 +41,7 @@ export const HardwarePermissionsModal: React.FC<HardwarePermissionsModalProps> =
   theme,
   targetFocus,
 }) => {
+  const insets = useSafeAreaInsets();
   const {
     permissions,
     isLoading,
@@ -84,9 +86,23 @@ export const HardwarePermissionsModal: React.FC<HardwarePermissionsModalProps> =
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContainer, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.modalContainer,
+            {
+              backgroundColor: theme.bg,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={[styles.headerRow, { borderBottomColor: theme.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>

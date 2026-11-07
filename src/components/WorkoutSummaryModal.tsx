@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   Trophy,
@@ -52,6 +53,7 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   exercisesCompleted,
   onFinish,
 }) => {
+  const insets = useSafeAreaInsets();
   const formatTime = (sec: number) => {
     const hrs = Math.floor(sec / 3600);
     const mins = Math.floor((sec % 3600) / 60);
@@ -68,8 +70,13 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onFinish}>
       <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onFinish}
+        />
         <View style={[styles.cardContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             {/* CELEBRATION BADGE */}
@@ -220,7 +227,15 @@ export const WorkoutSummaryModal: React.FC<WorkoutSummaryModalProps> = ({
           </ScrollView>
 
           {/* FINISH BUTTON */}
-          <View style={[styles.footerContainer, { borderTopColor: theme.border }]}>
+          <View
+            style={[
+              styles.footerContainer,
+              {
+                borderTopColor: theme.border,
+                paddingBottom: Math.max(16, insets.bottom),
+              },
+            ]}
+          >
             <TouchableOpacity
               onPress={handleFinishPress}
               style={[styles.finishBtn, { backgroundColor: theme.primary }]}
@@ -246,8 +261,12 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
+    borderBottomWidth: 0,
     paddingTop: 24,
+    overflow: 'hidden',
   },
   scrollContent: {
     paddingHorizontal: 22,

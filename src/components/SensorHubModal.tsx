@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Accelerometer, Gyroscope, Barometer, Pedometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
 import {
@@ -64,6 +65,7 @@ export const SensorHubModal: React.FC<SensorHubModalProps> = ({
   onOpenEnvModal,
   onOpenPermissions,
 }) => {
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<HubTab>('OVERVIEW');
   const [accelData, setAccelData] = useState<{ x: number; y: number; z: number }>({ x: 0, y: 0, z: 1 });
   const [gyroData, setGyroData] = useState<{ x: number; y: number; z: number }>({ x: 0, y: 0, z: 0 });
@@ -113,9 +115,23 @@ export const SensorHubModal: React.FC<SensorHubModalProps> = ({
   ];
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContainer, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.modalContainer,
+            {
+              backgroundColor: theme.bg,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={[styles.headerRow, { borderBottomColor: theme.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -514,9 +530,12 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingTop: 16,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Barometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
 import {
@@ -56,6 +57,7 @@ export const EnvironmentalRecoveryModal: React.FC<EnvironmentalRecoveryModalProp
   onClose,
   onReadingSaved,
 }) => {
+  const insets = useSafeAreaInsets();
   const [tempUnit, setTempUnit] = useState<'C' | 'F'>('C');
   const [ambientTempC, setAmbientTempC] = useState<number>(22.0);
   const [humidityPct, setHumidityPct] = useState<number>(50);
@@ -201,9 +203,23 @@ export const EnvironmentalRecoveryModal: React.FC<EnvironmentalRecoveryModalProp
   const displayedHeatIndex = tempUnit === 'C' ? heatIndexC : Number(((heatIndexC * 9) / 5 + 32).toFixed(1));
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContainer, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.modalContainer,
+            {
+              backgroundColor: theme.bg,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={[styles.headerRow, { borderBottomColor: theme.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

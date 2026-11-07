@@ -12,6 +12,7 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   Bell,
@@ -55,6 +56,7 @@ export const WorkoutAlarmsModal: React.FC<WorkoutAlarmsModalProps> = ({
   onAlarmsChanged,
   onTestTrigger,
 }) => {
+  const insets = useSafeAreaInsets();
   const [alarms, setAlarms] = useState<WorkoutAlarm[]>([]);
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
   const [editingAlarmId, setEditingAlarmId] = useState<number | null>(null);
@@ -202,13 +204,28 @@ export const WorkoutAlarmsModal: React.FC<WorkoutAlarmsModalProps> = ({
   const activeCount = alarms.filter((a) => a.isActive).length;
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          style={styles.keyboardContainer}
+        >
+          <View
+            style={[
+              styles.sheetContainer,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+                paddingBottom: Math.max(16, insets.bottom),
+              },
+            ]}
+          >
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
@@ -558,8 +575,8 @@ export const WorkoutAlarmsModal: React.FC<WorkoutAlarmsModalProps> = ({
             )}
           </ScrollView>
         </View>
+        </KeyboardAvoidingView>
       </View>
-      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -570,14 +587,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
+  keyboardContainer: {
+    width: '100%',
+    height: '92%',
+    justifyContent: 'flex-end',
+  },
   sheetContainer: {
-    maxHeight: '90%',
+    width: '100%',
+    height: '100%',
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingHorizontal: 20,
     paddingTop: 16,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

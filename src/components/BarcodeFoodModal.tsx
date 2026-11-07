@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   Barcode,
@@ -48,6 +49,7 @@ export const BarcodeFoodModal: React.FC<BarcodeFoodModalProps> = ({
   onClose,
   onFoodLogged,
 }) => {
+  const insets = useSafeAreaInsets();
   const [barcodeInput, setBarcodeInput] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [scannedFood, setScannedFood] = useState<FoodSearchResult | null>(null);
@@ -101,13 +103,28 @@ export const BarcodeFoodModal: React.FC<BarcodeFoodModalProps> = ({
   const currentFat = scannedFood ? Math.round(scannedFood.fatPer100g * factor * 10) / 10 : 0;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          style={styles.keyboardContainer}
+        >
+          <View
+            style={[
+              styles.modalCard,
+              {
+                backgroundColor: theme.bg,
+                borderColor: theme.border,
+                paddingBottom: Math.max(16, insets.bottom),
+              },
+            ]}
+          >
           {/* HEADER */}
           <View style={[styles.headerRow, { borderBottomColor: theme.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -305,8 +322,8 @@ export const BarcodeFoodModal: React.FC<BarcodeFoodModalProps> = ({
             )}
           </ScrollView>
         </View>
+        </KeyboardAvoidingView>
       </View>
-      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -317,13 +334,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
+  keyboardContainer: {
+    width: '100%',
+    height: '92%',
+    justifyContent: 'flex-end',
+  },
   modalCard: {
-    maxHeight: '90%',
+    width: '100%',
+    height: '100%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
-    paddingBottom: 24,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

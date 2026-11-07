@@ -9,6 +9,7 @@ import {
   Animated,
   Linking,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import {
@@ -47,6 +48,7 @@ export const CameraPpgModal: React.FC<CameraPpgModalProps> = ({
   onClose,
   onScanCompleted,
 }) => {
+  const insets = useSafeAreaInsets();
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [secondsLeft, setSecondsLeft] = useState<number>(15);
   const [isFingerDetected, setIsFingerDetected] = useState<boolean>(false);
@@ -237,9 +239,23 @@ export const CameraPpgModal: React.FC<CameraPpgModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContainer, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.modalContainer,
+            {
+              backgroundColor: theme.bg,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={[styles.headerRow, { borderBottomColor: theme.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -515,9 +531,12 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingTop: 16,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

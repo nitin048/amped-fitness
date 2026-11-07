@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   Footprints,
@@ -48,6 +49,7 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
   onClose,
   onTargetUpdated,
 }) => {
+  const insets = useSafeAreaInsets();
   const targetSteps = userProfile.targetDailySteps || 10000;
   const progressRatio = Math.min(1.0, stepTracker.steps / targetSteps);
   const progressPercent = Math.round(progressRatio * 100);
@@ -85,9 +87,23 @@ export const StepCounterModal: React.FC<StepCounterModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalContainer, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.modalContainer,
+            {
+              backgroundColor: theme.bg,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={[styles.headerRow, { borderBottomColor: theme.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -418,9 +434,12 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingTop: 16,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   Play,
@@ -36,6 +37,7 @@ export const StopwatchModal: React.FC<StopwatchModalProps> = ({
   theme,
   onClose,
 }) => {
+  const insets = useSafeAreaInsets();
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [elapsedMs, setElapsedMs] = useState<number>(0);
   const [laps, setLaps] = useState<LapItem[]>([]);
@@ -106,9 +108,23 @@ export const StopwatchModal: React.FC<StopwatchModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.sheetContainer,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
@@ -266,10 +282,13 @@ const styles = StyleSheet.create({
     maxHeight: '85%',
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingTop: 18,
     paddingHorizontal: 16,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

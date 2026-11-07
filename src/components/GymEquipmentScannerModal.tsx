@@ -13,6 +13,7 @@ import {
   Dimensions,
   Linking,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { YouTubeEmbedPlayer } from './YouTubeEmbedPlayer';
 import {
@@ -72,6 +73,7 @@ export const GymEquipmentScannerModal: React.FC<GymEquipmentScannerModalProps> =
   onRetake,
   onSelectDatabaseItem,
 }) => {
+  const insets = useSafeAreaInsets();
   const [scanMessageIndex, setScanMessageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<EquipmentTab>('OVERVIEW');
   const [isPlayingVideo, setIsPlayingVideo] = useState(false);
@@ -150,7 +152,24 @@ export const GymEquipmentScannerModal: React.FC<GymEquipmentScannerModalProps> =
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={() => {
+            setIsPlayingVideo(false);
+            onClose();
+          }}
+        />
+        <View
+          style={[
+            styles.sheetContainer,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>

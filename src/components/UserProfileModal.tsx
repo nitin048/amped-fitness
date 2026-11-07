@@ -14,6 +14,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -134,6 +135,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onReplayOnboarding,
   onOpenPermissions,
 }) => {
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<ProfileTab>('BIO');
 
   // Bio & Identity
@@ -378,12 +380,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.modalOverlay}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          style={styles.keyboardContainer}
+        >
           <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* HEADER */}
           <View style={styles.headerRow}>
@@ -498,6 +506,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </View>
 
           <ScrollView
+            style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 24 }}
             keyboardShouldPersistTaps="handled"
@@ -1531,7 +1540,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </ScrollView>
 
           {/* STICKY FOOTER SAVE BUTTON */}
-          <View style={[styles.footerContainer, { borderTopColor: theme.border, backgroundColor: theme.card }]}>
+          <View
+            style={[
+              styles.footerContainer,
+              {
+                borderTopColor: theme.border,
+                backgroundColor: theme.card,
+                paddingBottom: Math.max(16, insets.bottom),
+              },
+            ]}
+          >
             <TouchableOpacity
               onPress={handleSave}
               style={[styles.saveBtn, { backgroundColor: theme.primary }]}
@@ -1544,50 +1562,50 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </TouchableOpacity>
           </View>
         </View>
+        </KeyboardAvoidingView>
+      </View>
 
-        {/* PHOTO PICKER MODAL */}
-        <Modal visible={showPhotoModal} transparent animationType="fade">
-          <View style={styles.photoModalOverlay}>
-            <View style={[styles.photoModalBox, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <Text style={[styles.photoModalTitle, { color: theme.text }]}>Profile Photo</Text>
-                <TouchableOpacity onPress={() => setShowPhotoModal(false)} style={styles.photoCloseBtn}>
-                  <X size={18} color={theme.text} />
-                </TouchableOpacity>
-              </View>
+      {/* PHOTO PICKER MODAL */}
+      <Modal visible={showPhotoModal} transparent animationType="fade" onRequestClose={() => setShowPhotoModal(false)}>
+        <View style={styles.photoModalOverlay}>
+          <View style={[styles.photoModalBox, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <Text style={[styles.photoModalTitle, { color: theme.text }]}>Profile Photo</Text>
+              <TouchableOpacity onPress={() => setShowPhotoModal(false)} style={styles.photoCloseBtn}>
+                <X size={18} color={theme.text} />
+              </TouchableOpacity>
+            </View>
 
-              <View style={{ gap: 10 }}>
+            <View style={{ gap: 10 }}>
+              <TouchableOpacity
+                onPress={handleTakePhoto}
+                style={[styles.photoOptionBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+              >
+                <Camera size={18} color={theme.primary} />
+                <Text style={[styles.photoOptionText, { color: theme.text }]}>Take Photo with Camera</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handlePickFromLibrary}
+                style={[styles.photoOptionBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+              >
+                <ImageIcon size={18} color={theme.primary} />
+                <Text style={[styles.photoOptionText, { color: theme.text }]}>Choose from Photo Library</Text>
+              </TouchableOpacity>
+
+              {imageUri && (
                 <TouchableOpacity
-                  onPress={handleTakePhoto}
-                  style={[styles.photoOptionBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
+                  onPress={handleRemovePhoto}
+                  style={[styles.photoOptionBtn, { backgroundColor: `${theme.accentRed}15`, borderColor: theme.accentRed }]}
                 >
-                  <Camera size={18} color={theme.primary} />
-                  <Text style={[styles.photoOptionText, { color: theme.text }]}>Take Photo with Camera</Text>
+                  <Trash2 size={18} color={theme.accentRed} />
+                  <Text style={[styles.photoOptionText, { color: theme.accentRed }]}>Remove Current Photo</Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handlePickFromLibrary}
-                  style={[styles.photoOptionBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-                >
-                  <ImageIcon size={18} color={theme.primary} />
-                  <Text style={[styles.photoOptionText, { color: theme.text }]}>Choose from Photo Library</Text>
-                </TouchableOpacity>
-
-                {imageUri && (
-                  <TouchableOpacity
-                    onPress={handleRemovePhoto}
-                    style={[styles.photoOptionBtn, { backgroundColor: `${theme.accentRed}15`, borderColor: theme.accentRed }]}
-                  >
-                    <Trash2 size={18} color={theme.accentRed} />
-                    <Text style={[styles.photoOptionText, { color: theme.accentRed }]}>Remove Current Photo</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              )}
             </View>
           </View>
-        </Modal>
-      </View>
-      </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </Modal>
   );
 };
@@ -1598,14 +1616,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
+  keyboardContainer: {
+    width: '100%',
+    height: '92%',
+    justifyContent: 'flex-end',
+  },
   sheetContainer: {
-    maxHeight: '92%',
+    width: '100%',
+    height: '100%',
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
     paddingTop: 18,
     paddingHorizontal: 16,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

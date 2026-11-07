@@ -8,6 +8,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   Wind,
@@ -37,6 +38,7 @@ export const VagalBreathworkModal: React.FC<VagalBreathworkModalProps> = ({
   onClose,
   onSessionComplete,
 }) => {
+  const insets = useSafeAreaInsets();
   const [isActive, setIsActive] = useState<boolean>(false);
   const [phase, setPhase] = useState<BreathPhase>('INHALE');
   const [secondsInPhase, setSecondsInPhase] = useState<number>(4);
@@ -163,9 +165,23 @@ export const VagalBreathworkModal: React.FC<VagalBreathworkModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.modalCard, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.modalCard,
+            {
+              backgroundColor: theme.bg,
+              borderColor: theme.border,
+              paddingBottom: Math.max(20, insets.bottom + 8),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={[styles.headerRow, { borderBottomColor: theme.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -280,11 +296,13 @@ const styles = StyleSheet.create({
   modalCard: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderBottomWidth: 0,
-    paddingBottom: 32,
     paddingHorizontal: 20,
     paddingTop: 18,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',
