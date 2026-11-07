@@ -88,7 +88,7 @@ export const AmpedBrandLogo: React.FC<AmpedBrandLogoProps> = ({
       {showText && (
         <View style={styles.textColumn}>
           <View style={styles.titleRow}>
-            <Text style={[styles.brandTitle, { color: theme.text }]}>AMPED</Text>
+            <Text style={[styles.brandTitle, { color: theme.text }]}>APMED</Text>
             <Text style={[styles.brandFitnessText, { color: theme.primary }]}>FITNESS</Text>
           </View>
           {tagline ? (

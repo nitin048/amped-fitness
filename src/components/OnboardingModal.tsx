@@ -383,7 +383,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 </View>
 
                 <Text style={[styles.welcomeHeadline, { color: theme.text }]}>
-                  WELCOME TO AMPED
+                  WELCOME TO APMED
                 </Text>
                 <Text style={[styles.welcomeSubhead, { color: theme.subtext }]}>
                   Engineered for serious lifters. 100% offline, privacy-first biometric telemetry and scientific strength adaptation.
@@ -1052,7 +1052,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 >
                   <Zap size={18} color={theme.primaryText} />
                   <Text style={[styles.primaryActionBtnText, { color: theme.primaryText }]}>
-                    Enter AMPED OS
+                    Enter APMED OS
                   </Text>
                 </TouchableOpacity>
               </View>

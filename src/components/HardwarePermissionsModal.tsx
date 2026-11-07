@@ -116,7 +116,7 @@ export const HardwarePermissionsModal: React.FC<HardwarePermissionsModalProps> =
                 <Text style={[styles.privacyTitle, { color: theme.primary }]}>100% On-Device Privacy Architecture</Text>
               </View>
               <Text style={[styles.privacyDesc, { color: theme.subtext }]}>
-                Amped processes all motion kinematics, step signals, and camera capillary optical waveforms strictly in memory on your physical smartphone. No video or raw motion logs are ever stored or uploaded off-device.
+                Apmed processes all motion kinematics, step signals, and camera capillary optical waveforms strictly in memory on your physical smartphone. No video or raw motion logs are ever stored or uploaded off-device.
               </Text>
             </View>
 
@@ -196,7 +196,7 @@ export const HardwarePermissionsModal: React.FC<HardwarePermissionsModalProps> =
 
                     {/* Features Powered Tags (2-Column Pairs) */}
                     <View style={styles.tagsContainer}>
-                      <Text style={[styles.tagsLabel, { color: theme.subtext }]}>POWERS IN AMPED:</Text>
+                      <Text style={[styles.tagsLabel, { color: theme.subtext }]}>POWERS IN APMED:</Text>
                       <View style={{ gap: 6, marginTop: 4 }}>
                         {[0, 2].map((startIdx) => {
                           const tag1 = item.requiredFor[startIdx];

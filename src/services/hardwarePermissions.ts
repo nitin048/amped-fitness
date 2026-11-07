@@ -154,7 +154,7 @@ export const getAllHardwarePermissions = async (): Promise<HardwarePermissionDes
       title: 'Motion & Pedometer',
       subtitle: 'Hardware step detector & stride cadence',
       detailedRationale:
-        'Amped uses your device motion coprocessor to count daily steps, track stride cadence (SPM), and calibrate distance without GPS battery drain.',
+        'Apmed uses your device motion coprocessor to count daily steps, track stride cadence (SPM), and calibrate distance without GPS battery drain.',
       category: 'Motion & Locomotion',
       status: motionStatus,
       isGranted: motionStatus === 'granted',

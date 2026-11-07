@@ -35,7 +35,7 @@ const shareFile = async (filePath: string): Promise<boolean> => {
   await FileSystem.copyAsync({ from: filePath, to: backupPath });
   await Sharing.shareAsync(backupPath, {
     mimeType: 'application/octet-stream',
-    dialogTitle: 'Export Amped Workout & Nutrition Backup',
+    dialogTitle: 'Export Apmed Workout & Nutrition Backup',
     UTI: 'public.database',
   });
   return true;
