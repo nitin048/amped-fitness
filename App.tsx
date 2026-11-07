@@ -68,6 +68,11 @@ import { StopwatchModal } from './src/components/StopwatchModal';
 import { StepCounterModal } from './src/components/StepCounterModal';
 import { CameraPpgModal } from './src/components/CameraPpgModal';
 import { EnvironmentalRecoveryModal } from './src/components/EnvironmentalRecoveryModal';
+import { SamsungEnergyScoreCard } from './src/components/samsung/SamsungEnergyScoreCard';
+import { SamsungDailyActivityCard } from './src/components/samsung/SamsungDailyActivityCard';
+import { SamsungWeeklyGraph } from './src/components/samsung/SamsungWeeklyGraph';
+import { SamsungHydrationWidget } from './src/components/samsung/SamsungHydrationWidget';
+import { SamsungVitalsCard } from './src/components/samsung/SamsungVitalsCard';
 import { SensorHubModal } from './src/components/SensorHubModal';
 import { QuickToolsModal } from './src/components/QuickToolsModal';
 import { AlarmRingingModal } from './src/components/AlarmRingingModal';
@@ -123,6 +128,7 @@ const MainScreen = () => {
   const { theme, setThemeMode } = useTheme();
   const isOled = theme.name === 'MIDNIGHT_OLED';
   const [activeTab, setActiveTab] = useState<AppleTab>('SUMMARY');
+  const [summaryDashboardView, setSummaryDashboardView] = useState<'SAMSUNG' | 'RINGS'>('SAMSUNG');
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showRingsInfoModal, setShowRingsInfoModal] = useState<boolean>(false);
   const [showTargetsModal, setShowTargetsModal] = useState<boolean>(false);
@@ -1329,396 +1335,586 @@ const MainScreen = () => {
         {activeTab === 'SUMMARY' && (
           /* ================= TAB 1: SUMMARY ================= */
           <View>
-            {/* HERO ACTIVITY RINGS CARD (100% DYNAMIC) */}
-            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <View style={styles.cardHeaderRow}>
-                <View>
-                  <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>ATHLETIC EFFORT & ENERGY</Text>
-                  <Text style={[styles.cardTitle, { color: theme.text }]}>Today's Progress</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowTargetsModal(true);
-                      Haptics.selectionAsync();
-                    }}
-                    style={[styles.actionHeaderPill, { backgroundColor: `${theme.primary}18`, borderColor: theme.primary }]}
-                  >
-                    <Target size={12} color={theme.primary} />
-                    <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '800' }}>Edit Targets</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+            {/* SEGMENTED DASHBOARD VIEW SWITCHER (SAMSUNG HEALTH vs ACTIVITY RINGS) */}
+            <View
+              style={[
+                styles.segmentSwitcherContainer,
+                { backgroundColor: theme.cardElevated, borderColor: theme.border, marginBottom: 16 },
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  setSummaryDashboardView('SAMSUNG');
+                  Haptics.selectionAsync();
+                }}
+                style={[
+                  styles.segmentSwitcherTab,
+                  summaryDashboardView === 'SAMSUNG' && { backgroundColor: isOled ? '#FFFFFF' : theme.primary },
+                ]}
+                activeOpacity={0.8}
+              >
+                <Zap
+                  size={14}
+                  color={
+                    summaryDashboardView === 'SAMSUNG'
+                      ? (isOled ? '#000000' : theme.primaryText)
+                      : theme.subtext
+                  }
+                />
+                <Text
+                  style={[
+                    styles.segmentSwitcherText,
+                    {
+                      color:
+                        summaryDashboardView === 'SAMSUNG'
+                          ? (isOled ? '#000000' : theme.primaryText)
+                          : theme.subtext,
+                      fontWeight: '800',
+                    },
+                  ]}
+                >
+                  Samsung Health
+                </Text>
+              </TouchableOpacity>
 
-              {/* READ-ONLY VIEW: ACTIVITY RINGS & LEGEND (EDIT VIA DEDICATED HEADER BTN) */}
-              <View style={styles.ringsSectionRow}>
-                <AppleActivityRings
+              <TouchableOpacity
+                onPress={() => {
+                  setSummaryDashboardView('RINGS');
+                  Haptics.selectionAsync();
+                }}
+                style={[
+                  styles.segmentSwitcherTab,
+                  summaryDashboardView === 'RINGS' && { backgroundColor: isOled ? '#FFFFFF' : theme.primary },
+                ]}
+                activeOpacity={0.8}
+              >
+                <Activity
+                  size={14}
+                  color={
+                    summaryDashboardView === 'RINGS'
+                      ? (isOled ? '#000000' : theme.primaryText)
+                      : theme.subtext
+                  }
+                />
+                <Text
+                  style={[
+                    styles.segmentSwitcherText,
+                    {
+                      color:
+                        summaryDashboardView === 'RINGS'
+                          ? (isOled ? '#000000' : theme.primaryText)
+                          : theme.subtext,
+                      fontWeight: '800',
+                    },
+                  ]}
+                >
+                  Activity Rings
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {summaryDashboardView === 'SAMSUNG' ? (
+              /* ================= SAMSUNG HEALTH ONE UI 6/7 VIEW ================= */
+              <View>
+                {/* 1. SAMSUNG ENERGY SCORE WITH CIRCULAR GAUGE & SUB-METRICS */}
+                <SamsungEnergyScoreCard
+                  theme={theme}
                   volumeProgress={volumeProgress}
                   setsProgress={setsProgress}
-                  recoveryProgress={readinessProgress}
-                  size={120}
+                  recoveryProgress={avgReadiness}
+                  hydrationProgress={todayWaterMl / (userProfile.targetWaterMl || 3000)}
+                  targetSleep={recoverySleepHours || 8.0}
+                  onOpenRecovery={() => setActiveTab('RECOVERY')}
                 />
 
-                <View style={styles.ringsLegendColumn}>
-                  {/* RING 1: MOVE / VOLUME */}
-                  <View style={styles.ringMetricItem}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                      <View style={[styles.colorIndicator, { backgroundColor: isOled ? '#FFFFFF' : theme.accentRed }]} />
-                      <Text style={[styles.ringMetricLabel, { color: theme.subtext }]} numberOfLines={1}>
-                        MOVE ({Math.round(volumeProgress * 100)}%)
+                {/* 2. PROMINENT WORKOUT ACTION HERO */}
+                {isWorkoutActive ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setActiveTab('WORKOUT');
+                    }}
+                    style={[styles.appleWorkoutTile, { backgroundColor: theme.cardElevated, borderColor: theme.primary, marginBottom: 14 }]}
+                  >
+                    <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}25` }]}>
+                      <Flame size={24} color={theme.primary} />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 14, paddingRight: 4 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={[styles.pulsingGreenDot, { backgroundColor: theme.primary }]} />
+                        <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
+                          {activeWorkoutName}
+                        </Text>
+                      </View>
+                      <Text style={[styles.workoutTileMeta, { color: theme.primary, fontWeight: '800' }]} numberOfLines={1}>
+                        {formatTimer(sessionSeconds)} • {sessionVolumeKg.toLocaleString()} kg • {sessionSetsCount} sets
                       </Text>
                     </View>
-                    <Text style={[styles.ringMetricValue, { color: isOled ? '#FFFFFF' : theme.accentRed }]} numberOfLines={1}>
-                      {dailySummary.totalVolumeKg.toLocaleString()} <Text style={styles.ringMetricUnit}>KG</Text>
-                    </Text>
-                    <Text style={[styles.ringMetricGoal, { color: theme.subtext }]} numberOfLines={1}>
-                      Goal: {targetDailyVolume.toLocaleString()} KG
-                    </Text>
-                  </View>
-
-                  {/* RING 2: EXERCISE / SETS */}
-                  <View style={styles.ringMetricItem}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                      <View style={[styles.colorIndicator, { backgroundColor: isOled ? '#D1D1D6' : theme.primary }]} />
-                      <Text style={[styles.ringMetricLabel, { color: theme.subtext }]} numberOfLines={1}>
-                        EXERCISE ({Math.round(setsProgress * 100)}%)
+                    <ChevronRight size={20} color={theme.primary} />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setActiveTab('WORKOUT');
+                    }}
+                    style={[styles.appleWorkoutTile, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 14 }]}
+                  >
+                    <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}20` }]}>
+                      <Play size={22} color={theme.primary} fill={theme.primary} />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 14, paddingRight: 6 }}>
+                      <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
+                        Start Workout Session
+                      </Text>
+                      <Text style={[styles.workoutTileMeta, { color: theme.subtext }]} numberOfLines={1}>
+                        {selectedRoutine?.name || 'Push, Pull, Legs & 45+ exercises'}
                       </Text>
                     </View>
-                    <Text style={[styles.ringMetricValue, { color: isOled ? '#D1D1D6' : theme.primary }]} numberOfLines={1}>
-                      {dailySummary.totalSets} <Text style={styles.ringMetricUnit}>SETS</Text>
-                    </Text>
-                    <Text style={[styles.ringMetricGoal, { color: theme.subtext }]} numberOfLines={1}>
-                      Goal: {targetDailySets} SETS
-                    </Text>
-                  </View>
-
-                  {/* RING 3: STAND / RECOVERY */}
-                  <View style={styles.ringMetricItem}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                      <View style={[styles.colorIndicator, { backgroundColor: isOled ? '#8E8E93' : theme.accentCyan }]} />
-                      <Text style={[styles.ringMetricLabel, { color: theme.subtext }]} numberOfLines={1}>BODY READINESS</Text>
+                    <View style={[styles.startPillBadge, { backgroundColor: theme.primary, flexShrink: 0 }]}>
+                      <Text style={[styles.startPillBadgeText, { color: theme.primaryText }]}>START</Text>
                     </View>
-                    <Text style={[styles.ringMetricValue, { color: isOled ? '#8E8E93' : theme.accentCyan }]} numberOfLines={1}>
-                      {avgReadiness}% <Text style={styles.ringMetricUnit}>OPTIMAL</Text>
-                    </Text>
-                    <Text style={[styles.ringMetricGoal, { color: theme.subtext }]} numberOfLines={1}>
-                      Muscle State: {avgReadiness >= 80 ? 'Prime' : avgReadiness >= 50 ? 'Recovering' : 'Fatigued'}
-                    </Text>
-                  </View>
-                </View>
+                  </TouchableOpacity>
+                )}
+
+                {/* 3. SAMSUNG DAILY ACTIVITY 3-PILLARS PROGRESS CARD */}
+                <SamsungDailyActivityCard
+                  theme={theme}
+                  currentSteps={stepTracker.steps}
+                  targetSteps={userProfile.targetDailySteps || 10000}
+                  currentSets={dailySummary.totalSets}
+                  targetSets={targetDailySets}
+                  currentVolumeKg={dailySummary.totalVolumeKg}
+                  targetVolumeKg={targetDailyVolume}
+                  onOpenSteps={() => setShowStepModal(true)}
+                  onOpenWorkout={() => setActiveTab('WORKOUT')}
+                  onOpenTargets={() => setShowTargetsModal(true)}
+                />
+
+                {/* 4. INTERACTIVE 7-DAY WEEKLY GRAPH WITH METRIC SWITCHER */}
+                <SamsungWeeklyGraph
+                  theme={theme}
+                  daysActive={weeklyConsistency.daysActive}
+                  todayVolumeKg={dailySummary.totalVolumeKg}
+                  targetDailyVolume={targetDailyVolume}
+                  todaySteps={stepTracker.steps}
+                  targetDailySteps={userProfile.targetDailySteps || 10000}
+                  recentSessionsCount={recentSessions.length}
+                />
+
+                {/* 5. LIQUID WAVE HYDRATION TRACKER WITH QUICK PRESETS */}
+                <SamsungHydrationWidget
+                  theme={theme}
+                  todayWaterMl={todayWaterMl}
+                  targetWaterMl={userProfile.targetWaterMl || 3000}
+                  onAddWater={handleAddWater}
+                  onResetWater={handleResetWater}
+                />
+
+                {/* 6. LIVE VITALS & ECG WAVEFORM CARD */}
+                <SamsungVitalsCard
+                  theme={theme}
+                  heartRate={latestWellness?.heartRateBpm ?? 62}
+                  hrvRmssd={latestWellness?.hrvRmssd ?? 68}
+                  readinessScore={avgReadiness}
+                  onOpenPpg={() => setShowPpgModal(true)}
+                />
               </View>
-
-              {/* DYNAMIC HOURLY TRAINING DENSITY DISTRIBUTION */}
-              <View style={[styles.hourlyBarContainer, { borderTopColor: theme.border }]}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <Text style={[styles.hourlyLabel, { color: theme.subtext, marginBottom: 0 }]}>
-                    TODAY'S TRAINING DENSITY
-                  </Text>
-                  <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: '700' }}>
-                    {dailySummary.totalSets > 0 ? `${dailySummary.totalSets} Sets Logged Today` : 'No Sets Logged Yet'}
-                  </Text>
-                </View>
-
-                <View style={styles.barsRow}>
-                  {hourlyDensity.map((bucket, i) => (
-                    <View key={i} style={styles.barCol}>
-                      <View
-                        style={[
-                          styles.barFill,
-                          {
-                            height: `${bucket.fillPercent}%`,
-                            backgroundColor:
-                              bucket.volumeKg > 0
-                                ? isOled
-                                  ? bucket.isPeak ? '#FFFFFF' : '#8E8E93'
-                                  : bucket.isPeak ? theme.accentRed : theme.primary
-                                : `${theme.subtext}25`,
-                          },
-                        ]}
-                      />
-                    </View>
-                  ))}
-                </View>
-
-                {/* 2-HOUR INTERVAL LABELS */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-                  {hourlyDensity.map((b, i) => (
-                    <Text key={i} style={{ fontSize: 8, color: theme.subtext, textAlign: 'center', flex: 1 }}>
-                      {i % 2 === 0 ? b.label : ''}
-                    </Text>
-                  ))}
-                </View>
-              </View>
-            </View>
-
-            {/* PROMINENT WORKOUT ACTION HERO (HEVY / APPLE STYLE) */}
-            {isWorkoutActive ? (
-              <TouchableOpacity
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setActiveTab('WORKOUT');
-                }}
-                style={[styles.appleWorkoutTile, { backgroundColor: theme.cardElevated, borderColor: theme.primary, marginBottom: 14 }]}
-              >
-                <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}25` }]}>
-                  <Flame size={24} color={theme.primary} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 14, paddingRight: 4 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <View style={[styles.pulsingGreenDot, { backgroundColor: theme.primary }]} />
-                    <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
-                      {activeWorkoutName}
-                    </Text>
-                  </View>
-                  <Text style={[styles.workoutTileMeta, { color: theme.primary, fontWeight: '800' }]} numberOfLines={1}>
-                    {formatTimer(sessionSeconds)} • {sessionVolumeKg.toLocaleString()} kg • {sessionSetsCount} sets
-                  </Text>
-                </View>
-                <ChevronRight size={20} color={theme.primary} />
-              </TouchableOpacity>
             ) : (
-              <TouchableOpacity
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setActiveTab('WORKOUT');
-                }}
-                style={[styles.appleWorkoutTile, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 14 }]}
-              >
-                <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}20` }]}>
-                  <Play size={22} color={theme.primary} fill={theme.primary} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 14, paddingRight: 6 }}>
-                  <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
-                    Start Workout Session
-                  </Text>
-                  <Text style={[styles.workoutTileMeta, { color: theme.subtext }]} numberOfLines={1}>
-                    {selectedRoutine?.name || 'Push, Pull, Legs & 45+ exercises'}
-                  </Text>
-                </View>
-                <View style={[styles.startPillBadge, { backgroundColor: theme.primary, flexShrink: 0 }]}>
-                  <Text style={[styles.startPillBadgeText, { color: theme.primaryText }]}>START</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-
-            {/* MINIMALIST ATHLETIC BIO-GLANCE GRID (4-PILL BENTO) */}
-            <View style={styles.bioGlanceGrid}>
-              <View style={styles.bioGlanceRow}>
-                {/* TILE 1: STEPS TELEMETRY */}
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setShowStepModal(true);
-                  }}
-                  style={[styles.bioGlanceTile, { backgroundColor: theme.card, borderColor: theme.border }]}
-                  activeOpacity={0.75}
-                >
-                  <View style={styles.bioGlanceTopRow}>
-                    <View style={[styles.bioGlanceIconBadge, { backgroundColor: isOled ? '#FFFFFF15' : `${theme.primary}20` }]}>
-                      <Footprints size={14} color={isOled ? '#FFFFFF' : theme.primary} />
+              /* ================= CLASSIC APPLE ACTIVITY RINGS VIEW ================= */
+              <View>
+                {/* HERO ACTIVITY RINGS CARD (100% DYNAMIC) */}
+                <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <View style={styles.cardHeaderRow}>
+                    <View>
+                      <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>ATHLETIC EFFORT & ENERGY</Text>
+                      <Text style={[styles.cardTitle, { color: theme.text }]}>Today's Progress</Text>
                     </View>
-                    <Text style={[styles.bioGlanceStatusPill, { color: isOled ? '#FFFFFF' : theme.primary }]}>
-                      {stepTracker.movementState}
-                    </Text>
-                  </View>
-                  <Text style={[styles.bioGlanceValue, { color: theme.text }]} numberOfLines={1}>
-                    {stepTracker.steps.toLocaleString()}
-                  </Text>
-                  <View style={styles.bioGlanceBottomRow}>
-                    <Text style={[styles.bioGlanceLabel, { color: theme.subtext }]}>
-                      Steps • {stepTracker.distanceKm}km
-                    </Text>
-                    <Text style={[styles.bioGlanceSub, { color: theme.subtext }]}>
-                      {Math.min(100, Math.round((stepTracker.steps / (userProfile.targetDailySteps || 10000)) * 100))}%
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-
-                {/* TILE 2: VITALS & RESTING HR */}
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setShowPpgModal(true);
-                  }}
-                  style={[styles.bioGlanceTile, { backgroundColor: theme.card, borderColor: theme.border }]}
-                  activeOpacity={0.75}
-                >
-                  <View style={styles.bioGlanceTopRow}>
-                    <View style={[styles.bioGlanceIconBadge, { backgroundColor: isOled ? '#FFFFFF15' : '#FF2D5520' }]}>
-                      <Heart size={14} color={isOled ? '#FFFFFF' : '#FF2D55'} />
-                    </View>
-                    <Text style={[styles.bioGlanceStatusPill, { color: theme.subtext }]}>
-                      {latestWellness ? `${latestWellness.hrvRmssd}ms HRV` : 'Pulse'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.bioGlanceValue, { color: isOled ? '#FFFFFF' : '#FF2D55' }]} numberOfLines={1}>
-                    {latestWellness ? `${latestWellness.heartRateBpm}` : '62'}{' '}
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: theme.subtext }}>BPM</Text>
-                  </Text>
-                  <View style={styles.bioGlanceBottomRow}>
-                    <Text style={[styles.bioGlanceLabel, { color: theme.subtext }]}>
-                      Resting HR
-                    </Text>
-                    <Text style={[styles.bioGlanceSub, { color: isOled ? '#FFFFFF' : '#34C759' }]}>
-                      Optimal
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.bioGlanceRow}>
-                {/* TILE 3: HYDRATION GLANCE (TAP ADDS 250ML) */}
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    handleAddWater(250);
-                  }}
-                  style={[styles.bioGlanceTile, { backgroundColor: theme.card, borderColor: theme.border }]}
-                  activeOpacity={0.75}
-                >
-                  <View style={styles.bioGlanceTopRow}>
-                    <View style={[styles.bioGlanceIconBadge, { backgroundColor: isOled ? '#FFFFFF15' : '#00E5FF20' }]}>
-                      <Droplets size={14} color={isOled ? '#FFFFFF' : '#00E5FF'} />
-                    </View>
-                    <View style={[styles.bioQuickAddBadge, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
-                      <Plus size={10} color={theme.text} />
-                      <Text style={{ fontSize: 9, fontWeight: '800', color: theme.text }}>250ml</Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.bioGlanceValue, { color: isOled ? '#FFFFFF' : '#00E5FF' }]} numberOfLines={1}>
-                    {(todayWaterMl / 1000).toFixed(1)}{' '}
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: theme.subtext }}>
-                      / {((userProfile.targetWaterMl || 3000) / 1000).toFixed(1)}L
-                    </Text>
-                  </Text>
-                  <View style={styles.bioGlanceBottomRow}>
-                    <Text style={[styles.bioGlanceLabel, { color: theme.subtext }]}>
-                      Hydration
-                    </Text>
-                    <Text style={[styles.bioGlanceSub, { color: theme.subtext }]}>
-                      {Math.round((todayWaterMl / (userProfile.targetWaterMl || 3000)) * 100)}%
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-
-                {/* TILE 4: RECOVERY & READINESS */}
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setActiveTab('RECOVERY');
-                  }}
-                  style={[styles.bioGlanceTile, { backgroundColor: theme.card, borderColor: theme.border }]}
-                  activeOpacity={0.75}
-                >
-                  <View style={styles.bioGlanceTopRow}>
-                    <View style={[styles.bioGlanceIconBadge, { backgroundColor: isOled ? '#FFFFFF15' : `${theme.primary}20` }]}>
-                      <Zap size={14} color={isOled ? '#FFFFFF' : theme.primary} />
-                    </View>
-                    <Text style={[styles.bioGlanceStatusPill, { color: avgReadiness >= 75 ? (isOled ? '#FFFFFF' : '#30D158') : theme.subtext }]}>
-                      {avgReadiness >= 75 ? 'Optimal' : avgReadiness >= 50 ? 'Recovering' : 'Fatigued'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.bioGlanceValue, { color: theme.text }]} numberOfLines={1}>
-                    {avgReadiness}% <Text style={{ fontSize: 13, fontWeight: '700', color: theme.subtext }}>READY</Text>
-                  </Text>
-                  <View style={styles.bioGlanceBottomRow}>
-                    <Text style={[styles.bioGlanceLabel, { color: theme.subtext }]}>
-                      Recovery State
-                    </Text>
-                    <Text style={[styles.bioGlanceSub, { color: theme.primary }]}>
-                      View Heatmap →
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* WEEKLY CONSISTENCY & GOAL TRACKER CARD */}
-            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <View style={styles.cardHeaderRow}>
-                <View>
-                  <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>WEEKLY ATHLETE CONSISTENCY</Text>
-                  <Text style={[styles.cardTitle, { color: theme.text }]}>
-                    {weeklyConsistency.completedDays} of {userProfile.weeklyWorkoutDaysTarget || 5} Days Hit
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowProfileModal(true);
-                    Haptics.selectionAsync();
-                  }}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 5,
-                    paddingVertical: 5,
-                    paddingHorizontal: 9,
-                    borderRadius: 10,
-                    backgroundColor: `${theme.primary}20`,
-                    borderWidth: 1,
-                    borderColor: theme.primary,
-                  }}
-                >
-                  <CalendarCheck size={12} color={theme.primary} />
-                  <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '800' }}>
-                    {weeklyConsistency.percentage}% Hit
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* 7-DAY PROGRESS CIRCLES */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingHorizontal: 4 }}>
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((dayLetter, idx) => {
-                  const isActive = weeklyConsistency.daysActive[idx];
-                  const todayIdx = (new Date().getDay() + 6) % 7;
-                  const isToday = todayIdx === idx;
-                  return (
-                    <View key={idx} style={{ alignItems: 'center', gap: 6 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: isToday ? theme.primary : theme.subtext }}>
-                        {dayLetter}
-                      </Text>
-                      <View
-                        style={{
-                          width: 34,
-                          height: 34,
-                          borderRadius: 17,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: isActive ? theme.primary : theme.cardElevated,
-                          borderWidth: isToday ? 2 : 1,
-                          borderColor: isToday ? theme.primary : isActive ? theme.primary : theme.border,
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setShowTargetsModal(true);
+                          Haptics.selectionAsync();
                         }}
+                        style={[styles.actionHeaderPill, { backgroundColor: `${theme.primary}18`, borderColor: theme.primary }]}
                       >
-                        {isActive ? (
-                          <Check size={16} color={theme.primaryText} />
-                        ) : (
-                          <View
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: 3,
-                              backgroundColor: theme.subtext,
-                              opacity: 0.35,
-                            }}
-                          />
-                        )}
+                        <Target size={12} color={theme.primary} />
+                        <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '800' }}>Edit Targets</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* READ-ONLY VIEW: ACTIVITY RINGS & LEGEND (EDIT VIA DEDICATED HEADER BTN) */}
+                  <View style={styles.ringsSectionRow}>
+                    <AppleActivityRings
+                      volumeProgress={volumeProgress}
+                      setsProgress={setsProgress}
+                      recoveryProgress={readinessProgress}
+                      size={120}
+                    />
+
+                    <View style={styles.ringsLegendColumn}>
+                      {/* RING 1: MOVE / VOLUME */}
+                      <View style={styles.ringMetricItem}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                          <View style={[styles.colorIndicator, { backgroundColor: isOled ? '#FFFFFF' : theme.accentRed }]} />
+                          <Text style={[styles.ringMetricLabel, { color: theme.subtext }]} numberOfLines={1}>
+                            MOVE ({Math.round(volumeProgress * 100)}%)
+                          </Text>
+                        </View>
+                        <Text style={[styles.ringMetricValue, { color: isOled ? '#FFFFFF' : theme.accentRed }]} numberOfLines={1}>
+                          {dailySummary.totalVolumeKg.toLocaleString()} <Text style={styles.ringMetricUnit}>KG</Text>
+                        </Text>
+                        <Text style={[styles.ringMetricGoal, { color: theme.subtext }]} numberOfLines={1}>
+                          Goal: {targetDailyVolume.toLocaleString()} KG
+                        </Text>
+                      </View>
+
+                      {/* RING 2: EXERCISE / SETS */}
+                      <View style={styles.ringMetricItem}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                          <View style={[styles.colorIndicator, { backgroundColor: isOled ? '#D1D1D6' : theme.primary }]} />
+                          <Text style={[styles.ringMetricLabel, { color: theme.subtext }]} numberOfLines={1}>
+                            EXERCISE ({Math.round(setsProgress * 100)}%)
+                          </Text>
+                        </View>
+                        <Text style={[styles.ringMetricValue, { color: isOled ? '#D1D1D6' : theme.primary }]} numberOfLines={1}>
+                          {dailySummary.totalSets} <Text style={styles.ringMetricUnit}>SETS</Text>
+                        </Text>
+                        <Text style={[styles.ringMetricGoal, { color: theme.subtext }]} numberOfLines={1}>
+                          Goal: {targetDailySets} SETS
+                        </Text>
+                      </View>
+
+                      {/* RING 3: STAND / RECOVERY */}
+                      <View style={styles.ringMetricItem}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                          <View style={[styles.colorIndicator, { backgroundColor: isOled ? '#8E8E93' : theme.accentCyan }]} />
+                          <Text style={[styles.ringMetricLabel, { color: theme.subtext }]} numberOfLines={1}>BODY READINESS</Text>
+                        </View>
+                        <Text style={[styles.ringMetricValue, { color: isOled ? '#8E8E93' : theme.accentCyan }]} numberOfLines={1}>
+                          {avgReadiness}% <Text style={styles.ringMetricUnit}>OPTIMAL</Text>
+                        </Text>
+                        <Text style={[styles.ringMetricGoal, { color: theme.subtext }]} numberOfLines={1}>
+                          Muscle State: {avgReadiness >= 80 ? 'Prime' : avgReadiness >= 50 ? 'Recovering' : 'Fatigued'}
+                        </Text>
                       </View>
                     </View>
-                  );
-                })}
-              </View>
+                  </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
-                <Text style={{ fontSize: 11, color: theme.subtext }}>
-                  Program: <Text style={{ fontWeight: '700', color: theme.text }}>{userProfile.preferredSplit || 'Push / Pull / Legs (PPL)'}</Text>
-                </Text>
-                <TouchableOpacity onPress={() => setShowProfileModal(true)}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: theme.primary }}>
-                    Adjust Goal →
-                  </Text>
-                </TouchableOpacity>
+                  {/* DYNAMIC HOURLY TRAINING DENSITY DISTRIBUTION */}
+                  <View style={[styles.hourlyBarContainer, { borderTopColor: theme.border }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <Text style={[styles.hourlyLabel, { color: theme.subtext, marginBottom: 0 }]}>
+                        TODAY'S TRAINING DENSITY
+                      </Text>
+                      <Text style={{ fontSize: 10, color: theme.subtext, fontWeight: '700' }}>
+                        {dailySummary.totalSets > 0 ? `${dailySummary.totalSets} Sets Logged Today` : 'No Sets Logged Yet'}
+                      </Text>
+                    </View>
+
+                    <View style={styles.barsRow}>
+                      {hourlyDensity.map((bucket, i) => (
+                        <View key={i} style={styles.barCol}>
+                          <View
+                            style={[
+                              styles.barFill,
+                              {
+                                height: `${bucket.fillPercent}%`,
+                                backgroundColor:
+                                  bucket.volumeKg > 0
+                                    ? isOled
+                                      ? bucket.isPeak ? '#FFFFFF' : '#8E8E93'
+                                      : bucket.isPeak ? theme.accentRed : theme.primary
+                                    : `${theme.subtext}25`,
+                              },
+                            ]}
+                          />
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* 2-HOUR INTERVAL LABELS */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
+                      {hourlyDensity.map((b, i) => (
+                        <Text key={i} style={{ fontSize: 8, color: theme.subtext, textAlign: 'center', flex: 1 }}>
+                          {i % 2 === 0 ? b.label : ''}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+
+                {/* PROMINENT WORKOUT ACTION HERO (HEVY / APPLE STYLE) */}
+                {isWorkoutActive ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setActiveTab('WORKOUT');
+                    }}
+                    style={[styles.appleWorkoutTile, { backgroundColor: theme.cardElevated, borderColor: theme.primary, marginBottom: 14 }]}
+                  >
+                    <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}25` }]}>
+                      <Flame size={24} color={theme.primary} />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 14, paddingRight: 4 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={[styles.pulsingGreenDot, { backgroundColor: theme.primary }]} />
+                        <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
+                          {activeWorkoutName}
+                        </Text>
+                      </View>
+                      <Text style={[styles.workoutTileMeta, { color: theme.primary, fontWeight: '800' }]} numberOfLines={1}>
+                        {formatTimer(sessionSeconds)} • {sessionVolumeKg.toLocaleString()} kg • {sessionSetsCount} sets
+                      </Text>
+                    </View>
+                    <ChevronRight size={20} color={theme.primary} />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setActiveTab('WORKOUT');
+                    }}
+                    style={[styles.appleWorkoutTile, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 14 }]}
+                  >
+                    <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}20` }]}>
+                      <Play size={22} color={theme.primary} fill={theme.primary} />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 14, paddingRight: 6 }}>
+                      <Text style={[styles.workoutTileName, { color: theme.text }]} numberOfLines={1}>
+                        Start Workout Session
+                      </Text>
+                      <Text style={[styles.workoutTileMeta, { color: theme.subtext }]} numberOfLines={1}>
+                        {selectedRoutine?.name || 'Push, Pull, Legs & 45+ exercises'}
+                      </Text>
+                    </View>
+                    <View style={[styles.startPillBadge, { backgroundColor: theme.primary, flexShrink: 0 }]}>
+                      <Text style={[styles.startPillBadgeText, { color: theme.primaryText }]}>START</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+
+                {/* MINIMALIST ATHLETIC BIO-GLANCE GRID (4-PILL BENTO) */}
+                <View style={styles.bioGlanceGrid}>
+                  <View style={styles.bioGlanceRow}>
+                    {/* TILE 1: STEPS TELEMETRY */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setShowStepModal(true);
+                      }}
+                      style={[styles.bioGlanceTile, { backgroundColor: theme.card, borderColor: theme.border }]}
+                      activeOpacity={0.75}
+                    >
+                      <View style={styles.bioGlanceTopRow}>
+                        <View style={[styles.bioGlanceIconBadge, { backgroundColor: isOled ? '#FFFFFF15' : `${theme.primary}20` }]}>
+                          <Footprints size={14} color={isOled ? '#FFFFFF' : theme.primary} />
+                        </View>
+                        <Text style={[styles.bioGlanceStatusPill, { color: isOled ? '#FFFFFF' : theme.primary }]}>
+                          {stepTracker.movementState}
+                        </Text>
+                      </View>
+                      <Text style={[styles.bioGlanceValue, { color: theme.text }]} numberOfLines={1}>
+                        {stepTracker.steps.toLocaleString()}
+                      </Text>
+                      <View style={styles.bioGlanceBottomRow}>
+                        <Text style={[styles.bioGlanceLabel, { color: theme.subtext }]}>
+                          Steps • {stepTracker.distanceKm}km
+                        </Text>
+                        <Text style={[styles.bioGlanceSub, { color: theme.subtext }]}>
+                          {Math.min(100, Math.round((stepTracker.steps / (userProfile.targetDailySteps || 10000)) * 100))}%
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* TILE 2: VITALS & RESTING HR */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setShowPpgModal(true);
+                      }}
+                      style={[styles.bioGlanceTile, { backgroundColor: theme.card, borderColor: theme.border }]}
+                      activeOpacity={0.75}
+                    >
+                      <View style={styles.bioGlanceTopRow}>
+                        <View style={[styles.bioGlanceIconBadge, { backgroundColor: isOled ? '#FFFFFF15' : '#FF2D5520' }]}>
+                          <Heart size={14} color={isOled ? '#FFFFFF' : '#FF2D55'} />
+                        </View>
+                        <Text style={[styles.bioGlanceStatusPill, { color: theme.subtext }]}>
+                          {latestWellness ? `${latestWellness.hrvRmssd}ms HRV` : 'Pulse'}
+                        </Text>
+                      </View>
+                      <Text style={[styles.bioGlanceValue, { color: isOled ? '#FFFFFF' : '#FF2D55' }]} numberOfLines={1}>
+                        {latestWellness ? `${latestWellness.heartRateBpm}` : '62'}{' '}
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.subtext }}>BPM</Text>
+                      </Text>
+                      <View style={styles.bioGlanceBottomRow}>
+                        <Text style={[styles.bioGlanceLabel, { color: theme.subtext }]}>
+                          Resting HR
+                        </Text>
+                        <Text style={[styles.bioGlanceSub, { color: isOled ? '#FFFFFF' : '#34C759' }]}>
+                          Optimal
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.bioGlanceRow}>
+                    {/* TILE 3: HYDRATION GLANCE (TAP ADDS 250ML) */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        handleAddWater(250);
+                      }}
+                      style={[styles.bioGlanceTile, { backgroundColor: theme.card, borderColor: theme.border }]}
+                      activeOpacity={0.75}
+                    >
+                      <View style={styles.bioGlanceTopRow}>
+                        <View style={[styles.bioGlanceIconBadge, { backgroundColor: isOled ? '#FFFFFF15' : '#00E5FF20' }]}>
+                          <Droplets size={14} color={isOled ? '#FFFFFF' : '#00E5FF'} />
+                        </View>
+                        <View style={[styles.bioQuickAddBadge, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
+                          <Plus size={10} color={theme.text} />
+                          <Text style={{ fontSize: 9, fontWeight: '800', color: theme.text }}>250ml</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.bioGlanceValue, { color: isOled ? '#FFFFFF' : '#00E5FF' }]} numberOfLines={1}>
+                        {(todayWaterMl / 1000).toFixed(1)}{' '}
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.subtext }}>
+                          / {((userProfile.targetWaterMl || 3000) / 1000).toFixed(1)}L
+                        </Text>
+                      </Text>
+                      <View style={styles.bioGlanceBottomRow}>
+                        <Text style={[styles.bioGlanceLabel, { color: theme.subtext }]}>
+                          Hydration
+                        </Text>
+                        <Text style={[styles.bioGlanceSub, { color: theme.subtext }]}>
+                          {Math.round((todayWaterMl / (userProfile.targetWaterMl || 3000)) * 100)}%
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* TILE 4: RECOVERY & READINESS */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setActiveTab('RECOVERY');
+                      }}
+                      style={[styles.bioGlanceTile, { backgroundColor: theme.card, borderColor: theme.border }]}
+                      activeOpacity={0.75}
+                    >
+                      <View style={styles.bioGlanceTopRow}>
+                        <View style={[styles.bioGlanceIconBadge, { backgroundColor: isOled ? '#FFFFFF15' : `${theme.primary}20` }]}>
+                          <Zap size={14} color={isOled ? '#FFFFFF' : theme.primary} />
+                        </View>
+                        <Text style={[styles.bioGlanceStatusPill, { color: avgReadiness >= 75 ? (isOled ? '#FFFFFF' : '#30D158') : theme.subtext }]}>
+                          {avgReadiness >= 75 ? 'Optimal' : avgReadiness >= 50 ? 'Recovering' : 'Fatigued'}
+                        </Text>
+                      </View>
+                      <Text style={[styles.bioGlanceValue, { color: theme.text }]} numberOfLines={1}>
+                        {avgReadiness}% <Text style={{ fontSize: 13, fontWeight: '700', color: theme.subtext }}>READY</Text>
+                      </Text>
+                      <View style={styles.bioGlanceBottomRow}>
+                        <Text style={[styles.bioGlanceLabel, { color: theme.subtext }]}>
+                          Recovery State
+                        </Text>
+                        <Text style={[styles.bioGlanceSub, { color: theme.primary }]}>
+                          View Heatmap →
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* WEEKLY CONSISTENCY & GOAL TRACKER CARD */}
+                <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <View style={styles.cardHeaderRow}>
+                    <View>
+                      <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>WEEKLY ATHLETE CONSISTENCY</Text>
+                      <Text style={[styles.cardTitle, { color: theme.text }]}>
+                        {weeklyConsistency.completedDays} of {userProfile.weeklyWorkoutDaysTarget || 5} Days Hit
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowProfileModal(true);
+                        Haptics.selectionAsync();
+                      }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 5,
+                        paddingVertical: 5,
+                        paddingHorizontal: 9,
+                        borderRadius: 10,
+                        backgroundColor: `${theme.primary}20`,
+                        borderWidth: 1,
+                        borderColor: theme.primary,
+                      }}
+                    >
+                      <CalendarCheck size={12} color={theme.primary} />
+                      <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '800' }}>
+                        {weeklyConsistency.percentage}% Hit
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* 7-DAY PROGRESS CIRCLES */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingHorizontal: 4 }}>
+                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((dayLetter, idx) => {
+                      const isActive = weeklyConsistency.daysActive[idx];
+                      const todayIdx = (new Date().getDay() + 6) % 7;
+                      const isToday = todayIdx === idx;
+                      return (
+                        <View key={idx} style={{ alignItems: 'center', gap: 6 }}>
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: isToday ? theme.primary : theme.subtext }}>
+                            {dayLetter}
+                          </Text>
+                          <View
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 17,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: isActive ? theme.primary : theme.cardElevated,
+                              borderWidth: isToday ? 2 : 1,
+                              borderColor: isToday ? theme.primary : isActive ? theme.primary : theme.border,
+                            }}
+                          >
+                            {isActive ? (
+                              <Check size={16} color={theme.primaryText} />
+                            ) : (
+                              <View
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: 3,
+                                  backgroundColor: theme.subtext,
+                                  opacity: 0.35,
+                                }}
+                              />
+                            )}
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
+                    <Text style={{ fontSize: 11, color: theme.subtext }}>
+                      Program: <Text style={{ fontWeight: '700', color: theme.text }}>{userProfile.preferredSplit || 'Push / Pull / Legs (PPL)'}</Text>
+                    </Text>
+                    <TouchableOpacity onPress={() => setShowProfileModal(true)}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: theme.primary }}>
+                        Adjust Goal →
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            </View>
+            )}
 
             {/* RECENT SESSIONS HISTORY */}
             {recentSessions.length > 0 && (

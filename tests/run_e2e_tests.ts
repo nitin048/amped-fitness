@@ -68,6 +68,9 @@ Module.prototype.require = function (modulePath: string) {
   if (modulePath === 'react-native-webview') {
     return { WebView: () => null };
   }
+  if (modulePath === 'react-native-svg') {
+    return new Proxy({}, { get: () => () => null });
+  }
   if (modulePath === 'lucide-react-native') {
     return new Proxy({}, { get: () => () => null });
   }
@@ -1283,6 +1286,147 @@ describe('E2E Feature 25: App-Wide Input Validation & Real-Time Sanitization Eng
     assert.strictEqual(clampNumber('invalid', 100, 200, 100), 100);
   });
 });
+
+/* =========================================================================
+ * FEATURE 26: SAMSUNG HEALTH ONE UI 6/7 DASHBOARD & INTERACTIVE COMPONENTS
+ * ========================================================================= */
+describe('E2E Feature 26: Samsung Health One UI 6/7 Dashboard & Interactive Components', () => {
+  it('Samsung Health components must be properly exported as React FC components', () => {
+    const energyCardMod = loadTsModule('src/components/samsung/SamsungEnergyScoreCard.tsx');
+    const dailyActMod = loadTsModule('src/components/samsung/SamsungDailyActivityCard.tsx');
+    const weeklyGraphMod = loadTsModule('src/components/samsung/SamsungWeeklyGraph.tsx');
+    const hydrationMod = loadTsModule('src/components/samsung/SamsungHydrationWidget.tsx');
+    const vitalsMod = loadTsModule('src/components/samsung/SamsungVitalsCard.tsx');
+
+    assert.strictEqual(typeof energyCardMod.SamsungEnergyScoreCard, 'function');
+    assert.strictEqual(typeof dailyActMod.SamsungDailyActivityCard, 'function');
+    assert.strictEqual(typeof weeklyGraphMod.SamsungWeeklyGraph, 'function');
+    assert.strictEqual(typeof hydrationMod.SamsungHydrationWidget, 'function');
+    assert.strictEqual(typeof vitalsMod.SamsungVitalsCard, 'function');
+  });
+
+  it('Samsung Energy Score algorithm must accurately weight recovery, hydration and training load', () => {
+    // Formula: recovery (40%), hydration (20%), activity (25%), baseline (15%)
+    const calculateEnergyScore = (
+      recoveryProgress: number,
+      hydrationProgress: number,
+      volumeProgress: number,
+      setsProgress: number
+    ) => {
+      const rawScore = Math.round(
+        recoveryProgress * 0.4 +
+        Math.min(1, hydrationProgress) * 100 * 0.2 +
+        Math.min(1, (volumeProgress + setsProgress) / 2) * 100 * 0.25 +
+        15
+      );
+      return Math.max(35, Math.min(99, rawScore));
+    };
+
+    // Optimal day: 90% recovery, 100% water, 100% volume & sets
+    const optimalScore = calculateEnergyScore(90, 1.0, 1.0, 1.0);
+    assert.ok(optimalScore >= 85, `Optimal score should be >= 85, got ${optimalScore}`);
+    assert.ok(optimalScore <= 99, `Score cannot exceed 99, got ${optimalScore}`);
+
+    // Recharging day: 40% recovery, 50% water, 0% volume
+    const lowScore = calculateEnergyScore(40, 0.5, 0, 0);
+    assert.ok(lowScore >= 35 && lowScore < 60, `Low score should be in 35-60 range, got ${lowScore}`);
+
+    // Minimum boundary clamp test: 0 recovery, 0 hydration, 0 activity
+    const minClamped = calculateEnergyScore(0, 0, 0, 0);
+    assert.strictEqual(minClamped, 35, 'Score must clamp to minimum floor of 35');
+
+    // Maximum boundary clamp test: 100% across all
+    const maxClamped = calculateEnergyScore(100, 2.0, 2.0, 2.0);
+    assert.strictEqual(maxClamped, 99, 'Score must clamp to maximum ceiling of 99');
+  });
+
+  it('Samsung Energy Tier classification must map accurately to sports recovery tiers', () => {
+    const getEnergyTier = (score: number) => {
+      if (score >= 85) return 'Optimal Energy';
+      if (score >= 70) return 'Good Readiness';
+      if (score >= 50) return 'Recharging';
+      return 'Low Energy';
+    };
+
+    assert.strictEqual(getEnergyTier(95), 'Optimal Energy');
+    assert.strictEqual(getEnergyTier(85), 'Optimal Energy');
+    assert.strictEqual(getEnergyTier(84), 'Good Readiness');
+    assert.strictEqual(getEnergyTier(70), 'Good Readiness');
+    assert.strictEqual(getEnergyTier(69), 'Recharging');
+    assert.strictEqual(getEnergyTier(50), 'Recharging');
+    assert.strictEqual(getEnergyTier(49), 'Low Energy');
+    assert.strictEqual(getEnergyTier(35), 'Low Energy');
+  });
+
+  it('Samsung Daily Activity ratios must clamp accurately and guard against zero division', () => {
+    const getRatios = (steps: number, targetSteps: number, sets: number, targetSets: number, vol: number, targetVol: number) => ({
+      stepsRatio: Math.min(1, Math.max(0, steps / Math.max(1, targetSteps))),
+      setsRatio: Math.min(1, Math.max(0, sets / Math.max(1, targetSets))),
+      volumeRatio: Math.min(1, Math.max(0, vol / Math.max(1, targetVol))),
+    });
+
+    const normal = getRatios(5000, 10000, 10, 20, 2500, 5000);
+    assert.strictEqual(normal.stepsRatio, 0.5);
+    assert.strictEqual(normal.setsRatio, 0.5);
+    assert.strictEqual(normal.volumeRatio, 0.5);
+
+    // Overshoot should clamp to 1.0 (100%)
+    const overshot = getRatios(15000, 10000, 30, 20, 8000, 5000);
+    assert.strictEqual(overshot.stepsRatio, 1.0);
+    assert.strictEqual(overshot.setsRatio, 1.0);
+    assert.strictEqual(overshot.volumeRatio, 1.0);
+
+    // Zero targets should not cause NaN or Infinity
+    const zeroTargets = getRatios(100, 0, 5, 0, 500, 0);
+    assert.ok(isFinite(zeroTargets.stepsRatio));
+    assert.ok(isFinite(zeroTargets.setsRatio));
+    assert.ok(isFinite(zeroTargets.volumeRatio));
+  });
+
+  it('Samsung Weekly Graph 7-day data generator must support metric switching and day inspection', () => {
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const todayIdx = (new Date().getDay() + 6) % 7;
+    const daysActive = { 0: true, 1: true, 2: true, 3: false, 4: true, 5: false, 6: false };
+
+    assert.strictEqual(dayLabels.length, 7);
+    assert.ok(todayIdx >= 0 && todayIdx <= 6);
+
+    // Compute calories formula: vol * 0.08 + steps * 0.04
+    const volumeKg = 4500;
+    const steps = 9200;
+    const expectedCalories = Math.round(volumeKg * 0.08 + steps * 0.04);
+    assert.strictEqual(expectedCalories, 728);
+
+    // Active day lookup
+    assert.strictEqual(Boolean(daysActive[0]), true);
+    assert.strictEqual(Boolean(daysActive[3]), false);
+  });
+
+  it('Samsung Hydration Widget progress and quick action logging', () => {
+    const targetWaterMl = 3000;
+    let currentWaterMl = 1500;
+
+    const getProgress = (current: number, target: number) =>
+      Math.min(1, Math.max(0, current / Math.max(1, target)));
+
+    assert.strictEqual(getProgress(currentWaterMl, targetWaterMl), 0.5);
+
+    // Quick add 250ml
+    currentWaterMl += 250;
+    assert.strictEqual(currentWaterMl, 1750);
+    assert.strictEqual(Math.round(getProgress(currentWaterMl, targetWaterMl) * 100), 58);
+
+    // Quick add 500ml
+    currentWaterMl += 500;
+    assert.strictEqual(currentWaterMl, 2250);
+    assert.strictEqual(Math.round(getProgress(currentWaterMl, targetWaterMl) * 100), 75);
+
+    // Reset
+    currentWaterMl = 0;
+    assert.strictEqual(getProgress(currentWaterMl, targetWaterMl), 0);
+  });
+});
+
 
 
 

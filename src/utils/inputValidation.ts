@@ -239,3 +239,4 @@ export const clampNumber = (val: string | number, min: number, max: number, defa
   if (isNaN(num)) return defaultVal;
   return Math.max(min, Math.min(max, num));
 };
+
