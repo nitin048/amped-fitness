@@ -87,6 +87,7 @@ export interface UserSettings {
   avatar_color?: string;
   profile_image_uri?: string | null;
   has_completed_onboarding?: number;
+  has_seen_app_tour?: number;
   target_daily_steps?: number;
   target_resting_hr?: number;
   recovery_sleep_hours?: number;
@@ -186,6 +187,7 @@ export interface UserProfile {
   avatarColor: string;
   profileImageUri?: string | null;
   hasCompletedOnboarding: boolean;
+  hasSeenAppTour?: boolean;
   recoverySleepHours?: number;
   recoverySoreness?: 'NONE' | 'MILD' | 'SORE' | 'SEVERE';
   recoveryChecklist?: Record<string, boolean>;
@@ -203,6 +205,7 @@ export const initLocalDatabase = () => {
       bar_weight_kg REAL DEFAULT 20,
       gemini_api_key TEXT DEFAULT '',
       has_completed_onboarding INTEGER DEFAULT 0,
+      has_seen_app_tour INTEGER DEFAULT 0,
       has_seeded_workout_alarms INTEGER DEFAULT 0
     );
 
@@ -446,6 +449,9 @@ export const initLocalDatabase = () => {
   } catch {}
   try {
     db.execSync(`ALTER TABLE user_settings ADD COLUMN has_seeded_workout_alarms INTEGER DEFAULT 0;`);
+  } catch {}
+  try {
+    db.execSync(`ALTER TABLE user_settings ADD COLUMN has_seen_app_tour INTEGER DEFAULT 0;`);
   } catch {}
 
   // Seed default user settings (Minimalist OLED default, never overwrites existing user theme)
@@ -1116,6 +1122,7 @@ export const getUserProfile = (): UserProfile => {
     avatarColor: row?.avatar_color || '#30D158',
     profileImageUri: row?.profile_image_uri || null,
     hasCompletedOnboarding: Boolean(row?.has_completed_onboarding),
+    hasSeenAppTour: Boolean(row?.has_seen_app_tour),
     targetDailySteps: row?.target_daily_steps || 10000,
     targetRestingHr: row?.target_resting_hr || 60,
     recoverySleepHours: row?.recovery_sleep_hours !== undefined && row.recovery_sleep_hours !== null ? Number(row.recovery_sleep_hours) : 7.5,
@@ -1137,6 +1144,29 @@ export const checkHasCompletedOnboarding = (): boolean => {
     `SELECT has_completed_onboarding FROM user_settings WHERE id = 1`
   );
   return Boolean(row?.has_completed_onboarding);
+};
+
+export const checkHasSeenAppTour = (): boolean => {
+  try {
+    const row = db.getFirstSync<{ has_seen_app_tour?: number }>(
+      `SELECT has_seen_app_tour FROM user_settings WHERE id = 1`
+    );
+    return Boolean(row?.has_seen_app_tour);
+  } catch {
+    return false;
+  }
+};
+
+export const markAppTourSeen = (): void => {
+  try {
+    db.runSync(`UPDATE user_settings SET has_seen_app_tour = 1 WHERE id = 1`);
+  } catch {}
+};
+
+export const resetAppTour = (): void => {
+  try {
+    db.runSync(`UPDATE user_settings SET has_seen_app_tour = 0 WHERE id = 1`);
+  } catch {}
 };
 
 export const completeOnboarding = (profileData: Partial<UserProfile>): UserProfile => {
@@ -1192,6 +1222,7 @@ export const saveUserProfile = (profile: Partial<UserProfile>): void => {
       gemini_api_key = ?,
       profile_image_uri = ?,
       has_completed_onboarding = ?,
+      has_seen_app_tour = ?,
       target_daily_steps = ?,
       target_resting_hr = ?,
       theme_mode = ?,
@@ -1233,6 +1264,7 @@ export const saveUserProfile = (profile: Partial<UserProfile>): void => {
       merged.geminiApiKey,
       merged.profileImageUri ?? null,
       merged.hasCompletedOnboarding ? 1 : 0,
+      merged.hasSeenAppTour ? 1 : 0,
       Number(merged.targetDailySteps) || 10000,
       Number(merged.targetRestingHr) || 60,
       merged.themeMode || 'MIDNIGHT_OLED',

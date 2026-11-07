@@ -42,6 +42,7 @@ import {
   HeartPulse,
   ShieldCheck,
   ChevronRight,
+  Compass,
 } from 'lucide-react-native';
 import { ThemePalette, ThemeName, THEMES } from '../theme/ThemeContext';
 import {
@@ -78,6 +79,7 @@ interface UserProfileModalProps {
   onThemeChanged: (mode: ThemeName) => void;
   onReplayOnboarding?: () => void;
   onOpenPermissions?: () => void;
+  onOpenAppTour?: () => void;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -134,6 +136,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onThemeChanged,
   onReplayOnboarding,
   onOpenPermissions,
+  onOpenAppTour,
 }) => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<ProfileTab>('BIO');
@@ -1485,6 +1488,43 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       <Sparkles size={15} color={theme.primary} />
                       <Text style={{ fontSize: 13, fontWeight: '800', color: theme.primary }}>
                         Replay Welcome & Onboarding
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* APP FEATURE TOUR & HOW-TO GUIDE */}
+                {onOpenAppTour && (
+                  <View style={[styles.cardBox, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <Compass size={15} color={theme.primary} />
+                      <Text style={[styles.fieldLabel, { color: theme.subtext, marginBottom: 0 }]}>
+                        HOW TO USE APMED • FEATURE TOUR
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 12, color: theme.subtext, lineHeight: 17, marginBottom: 12 }}>
+                      Interactive step-by-step walkthrough covering the Activity Rings, set logging with 1RM, rest timers, muscle recovery heatmap, and barcode scanner.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        onOpenAppTour();
+                      }}
+                      activeOpacity={0.8}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        borderRadius: 12,
+                        backgroundColor: theme.primary,
+                      }}
+                    >
+                      <Compass size={15} color={theme.primaryText} />
+                      <Text style={{ fontSize: 13, fontWeight: '800', color: theme.primaryText }}>
+                        Start App Feature Tour
                       </Text>
                     </TouchableOpacity>
                   </View>

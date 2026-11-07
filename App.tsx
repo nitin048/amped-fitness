@@ -38,7 +38,9 @@ import {
   calculate1RM,
   saveRecoverySettings,
   getCustomRoutines,
-  deleteCustomRoutine
+  deleteCustomRoutine,
+  checkHasSeenAppTour,
+  markAppTourSeen,
 } from './src/db/database';
 import { ThemeProvider, useTheme, THEMES, ThemeName } from './src/theme/ThemeContext';
 import { useGymSensors } from './src/hooks/useGymSensors';
@@ -65,6 +67,7 @@ import { WorkoutSummaryModal } from './src/components/WorkoutSummaryModal';
 import { UserProfileModal } from './src/components/UserProfileModal';
 import { DailyTargetsModal } from './src/components/DailyTargetsModal';
 import { OnboardingModal } from './src/components/OnboardingModal';
+import { AppTourModal } from './src/components/AppTourModal';
 import { WorkoutAlarmsModal } from './src/components/WorkoutAlarmsModal';
 import { StopwatchModal } from './src/components/StopwatchModal';
 import { StepCounterModal } from './src/components/StepCounterModal';
@@ -140,6 +143,9 @@ const MainScreen = () => {
 
   // First-Time Onboarding & Utility Modals
   const [showOnboarding, setShowOnboarding] = useState<boolean>(!userProfile.hasCompletedOnboarding);
+  const [showAppTour, setShowAppTour] = useState<boolean>(
+    userProfile.hasCompletedOnboarding && !userProfile.hasSeenAppTour
+  );
   const [showAlarmsModal, setShowAlarmsModal] = useState<boolean>(false);
   const [showStopwatchModal, setShowStopwatchModal] = useState<boolean>(false);
   const [showQuickToolsModal, setShowQuickToolsModal] = useState<boolean>(false);
@@ -4689,6 +4695,10 @@ const MainScreen = () => {
           setShowProfileModal(false);
           setShowPermissionsModal(true);
         }}
+        onOpenAppTour={() => {
+          setShowProfileModal(false);
+          setShowAppTour(true);
+        }}
       />
 
       {/* DAILY TARGETS MODAL */}
@@ -4711,6 +4721,26 @@ const MainScreen = () => {
           setUserProfile(finished);
           setShowOnboarding(false);
           refreshAllData();
+          if (!finished.hasSeenAppTour) {
+            setShowAppTour(true);
+          }
+        }}
+      />
+
+      {/* 1ST TIME / ON-DEMAND APMED FEATURE TOUR & WALKTHROUGH */}
+      <AppTourModal
+        visible={showAppTour}
+        theme={theme}
+        onClose={() => {
+          markAppTourSeen();
+          setShowAppTour(false);
+          setUserProfile(getUserProfile());
+        }}
+        onNavigateToTab={(targetTab) => {
+          markAppTourSeen();
+          setShowAppTour(false);
+          setUserProfile(getUserProfile());
+          setActiveTab(targetTab);
         }}
       />
 
@@ -4733,6 +4763,10 @@ const MainScreen = () => {
         onOpenEnv={() => setShowEnvModal(true)}
         onOpenEquipmentScanner={() => setShowEquipmentScannerModal(true)}
         onOpenStrength={() => setShowStrengthModal(true)}
+        onOpenAppTour={() => {
+          setShowQuickToolsModal(false);
+          setShowAppTour(true);
+        }}
       />
 
       {/* ACTIVE WORKOUT ALARM RINGING ALERT */}

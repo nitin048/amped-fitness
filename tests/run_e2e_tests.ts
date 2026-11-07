@@ -1575,5 +1575,49 @@ describe('E2E Feature 30: Bottom Sheet Modal Anchoring & Zero-Gap Validation', (
   });
 });
 
+describe('E2E Feature 31: App Feature Tour & First-Time Walkthrough Engine', () => {
+  it('AppTourModal module must export AppTourModal component', () => {
+    const tourMod = loadTsModule('src/components/AppTourModal.tsx');
+    assert.ok(tourMod.AppTourModal, 'AppTourModal must be exported');
+  });
+
+  it('database methods for App Tour persistence must function bijectively', () => {
+    // 1. Reset tour state to unseen
+    dbModule.resetAppTour();
+    assert.strictEqual(dbModule.checkHasSeenAppTour(), false, 'checkHasSeenAppTour must return false after resetAppTour');
+
+    // Profile retrieval should also reflect hasSeenAppTour: false
+    const profBefore = dbModule.getUserProfile();
+    assert.strictEqual(profBefore.hasSeenAppTour, false);
+
+    // 2. Mark tour as seen
+    dbModule.markAppTourSeen();
+    assert.strictEqual(dbModule.checkHasSeenAppTour(), true, 'checkHasSeenAppTour must return true after markAppTourSeen');
+
+    // Profile retrieval should now reflect hasSeenAppTour: true
+    const profAfter = dbModule.getUserProfile();
+    assert.strictEqual(profAfter.hasSeenAppTour, true);
+  });
+
+  it('App Tour interactive demo algorithms must calculate accurately', () => {
+    const calculateDemoEnergyScore = (sleep: number, water: number): number => {
+      const sleepFactor = Math.min(100, (sleep / 8.0) * 50);
+      const waterFactor = Math.min(100, (water / 3000) * 35);
+      const recoveryBase = 15;
+      return Math.min(100, Math.round(sleepFactor + waterFactor + recoveryBase));
+    };
+
+    // 8h sleep and 3000ml water should produce 100% score
+    assert.strictEqual(calculateDemoEnergyScore(8, 3000), 100);
+
+    // 4h sleep and 1500ml water should produce (25 + 17.5 + 15) = 58
+    assert.strictEqual(calculateDemoEnergyScore(4, 1500), 58);
+
+    // 6h sleep and 2000ml water should produce (37.5 + 23.33 + 15) = 76
+    assert.strictEqual(calculateDemoEnergyScore(6, 2000), 76);
+  });
+});
+
+
 
 

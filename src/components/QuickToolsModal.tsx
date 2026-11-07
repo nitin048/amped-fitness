@@ -21,6 +21,7 @@ import {
   Thermometer,
   Scan,
   Trophy,
+  Compass,
 } from 'lucide-react-native';
 import { ThemePalette } from '../theme/ThemeContext';
 import { MotionStepMetrics } from '../hooks/useMotionStepTracker';
@@ -44,6 +45,7 @@ interface QuickToolsModalProps {
   onOpenEnv?: () => void;
   onOpenEquipmentScanner?: () => void;
   onOpenStrength?: () => void;
+  onOpenAppTour?: () => void;
 }
 
 export const QuickToolsModal: React.FC<QuickToolsModalProps> = ({
@@ -64,6 +66,7 @@ export const QuickToolsModal: React.FC<QuickToolsModalProps> = ({
   onOpenEnv,
   onOpenEquipmentScanner,
   onOpenStrength,
+  onOpenAppTour,
 }) => {
   const insets = useSafeAreaInsets();
   const activeAlarms = alarms.filter((a) => a.isActive);
@@ -340,6 +343,53 @@ export const QuickToolsModal: React.FC<QuickToolsModalProps> = ({
                   </View>
                 </TouchableOpacity>
               </View>
+
+              {/* 9. APMED FEATURE TOUR & HOW-TO GUIDE */}
+              {onOpenAppTour && (
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    onClose();
+                    onOpenAppTour();
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 14,
+                    borderRadius: 16,
+                    backgroundColor: `${theme.primary}15`,
+                    borderWidth: 1,
+                    borderColor: `${theme.primary}50`,
+                    marginTop: 10,
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                    <View
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        backgroundColor: theme.primary,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Compass size={18} color={theme.primaryText} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13.5, fontWeight: '800', color: theme.text }}>
+                        App Feature Tour & How-To Guide
+                      </Text>
+                      <Text style={{ fontSize: 11, color: theme.subtext, marginTop: 1 }}>
+                        Interactive walkthrough of all Apmed training & recovery tools
+                      </Text>
+                    </View>
+                  </View>
+                  <ChevronRight size={16} color={theme.primary} />
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
         </View>
