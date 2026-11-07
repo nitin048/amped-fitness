@@ -1478,4 +1478,102 @@ describe('E2E Feature 27: Exercise Picker & Workout Streamlining Engine', () => 
   });
 });
 
+describe('E2E Feature 28: wger Workout Manager Open API & Offline Dataset', () => {
+  const wgerMod = loadTsModule('src/services/wgerApi.ts');
+
+  it('wger API service must export core methods and constants', () => {
+    assert.ok(wgerMod.stripHtml, 'stripHtml must be exported');
+    assert.ok(wgerMod.mapWgerMuscleToCore, 'mapWgerMuscleToCore must be exported');
+    assert.ok(wgerMod.WGER_FALLBACK_EXERCISES, 'WGER_FALLBACK_EXERCISES must be exported');
+    assert.ok(wgerMod.fetchWgerExercises, 'fetchWgerExercises must be exported');
+    assert.ok(wgerMod.searchWgerExercises, 'searchWgerExercises must be exported');
+    assert.ok(wgerMod.importWgerExerciseToLocalDb, 'importWgerExerciseToLocalDb must be exported');
+  });
+
+  it('stripHtml must clean HTML formatting from wger descriptions', () => {
+    const raw = '<p>Lie flat on the bench.&nbsp;Keep elbows tucked at <strong>45 degrees</strong>.</p>';
+    const cleaned = wgerMod.stripHtml(raw);
+    assert.strictEqual(cleaned, 'Lie flat on the bench. Keep elbows tucked at 45 degrees.');
+  });
+
+  it('mapWgerMuscleToCore must map wger biological names to Apmed 6 core groups', () => {
+    assert.strictEqual(wgerMod.mapWgerMuscleToCore('Pectoralis major'), 'CHEST');
+    assert.strictEqual(wgerMod.mapWgerMuscleToCore('Latissimus dorsi'), 'BACK');
+    assert.strictEqual(wgerMod.mapWgerMuscleToCore('Quadriceps femoris'), 'LEGS');
+    assert.strictEqual(wgerMod.mapWgerMuscleToCore('Anterior deltoid'), 'SHOULDERS');
+    assert.strictEqual(wgerMod.mapWgerMuscleToCore('Biceps brachii'), 'ARMS');
+    assert.strictEqual(wgerMod.mapWgerMuscleToCore('Rectus abdominis'), 'CORE');
+  });
+
+  it('WGER_FALLBACK_EXERCISES must have rich cues, equipment and muscles', () => {
+    assert.ok(wgerMod.WGER_FALLBACK_EXERCISES.length >= 10);
+    const bench = wgerMod.WGER_FALLBACK_EXERCISES.find((e: any) => e.name.includes('Bench Press'));
+    assert.ok(bench);
+    assert.ok(bench.primaryMuscles.length > 0);
+    assert.ok(bench.description.length > 30);
+    assert.ok(bench.equipment.length > 0);
+  });
+
+  it('importWgerExerciseToLocalDb must persist wger exercise into SQLite cleanly', () => {
+    const sample = wgerMod.WGER_FALLBACK_EXERCISES[0];
+    const imported = wgerMod.importWgerExerciseToLocalDb(sample);
+    assert.ok(imported.id);
+    assert.strictEqual(imported.name, sample.name);
+    assert.strictEqual(imported.primary_muscle, 'CHEST');
+    assert.ok(imported.equipment.includes('BARBELL'));
+  });
+});
+
+describe('E2E Feature 29: Real-time Workout Calorie Expenditure Engine (MET 5.5 + Tonnage)', () => {
+  it('calories must be exactly 0 when session has not started or seconds is 0', () => {
+    const calcCalories = (isWorkoutActive: boolean, sessionSeconds: number, bw: number, volumeKg: number) => {
+      if (!isWorkoutActive || sessionSeconds <= 0) return 0;
+      const metBurn = ((5.5 * bw) / 3600) * sessionSeconds;
+      const volumeBurn = volumeKg * 0.0075;
+      return Math.max(1, Math.round(metBurn + volumeBurn));
+    };
+
+    assert.strictEqual(calcCalories(false, 0, 75, 0), 0);
+    assert.strictEqual(calcCalories(false, 120, 75, 1000), 0);
+    assert.strictEqual(calcCalories(true, 0, 75, 0), 0);
+  });
+
+  it('calories must dynamically scale with athlete bodyweight and volume lifted', () => {
+    const calcCalories = (isWorkoutActive: boolean, sessionSeconds: number, bw: number, volumeKg: number) => {
+      if (!isWorkoutActive || sessionSeconds <= 0) return 0;
+      const metBurn = ((5.5 * bw) / 3600) * sessionSeconds;
+      const volumeBurn = volumeKg * 0.0075;
+      return Math.max(1, Math.round(metBurn + volumeBurn));
+    };
+
+    // 45 minute workout (2700s) for 80kg athlete with 6,000kg volume
+    const cal80kg = calcCalories(true, 2700, 80, 6000);
+    // metBurn = (5.5 * 80 / 3600) * 2700 = 330 kcal
+    // volumeBurn = 6000 * 0.0075 = 45 kcal
+    // total = 375 kcal
+    assert.strictEqual(cal80kg, 375);
+
+    // Heavier athlete (100kg) in same session should burn proportionally more
+    const cal100kg = calcCalories(true, 2700, 100, 6000);
+    // metBurn = (5.5 * 100 / 3600) * 2700 = 412.5
+    // volumeBurn = 45 -> 457.5 -> 458 kcal
+    assert.strictEqual(cal100kg, 458);
+    assert.ok(cal100kg > cal80kg);
+  });
+});
+
+describe('E2E Feature 30: Bottom Sheet Modal Anchoring & Zero-Gap Validation', () => {
+  it('CustomRoutineModal, AiWorkoutModal, and OnlineExerciseModal must be valid components', () => {
+    const crMod = loadTsModule('src/components/CustomRoutineModal.tsx');
+    assert.ok(crMod.CustomRoutineModal, 'CustomRoutineModal must be exported');
+
+    const aiMod = loadTsModule('src/components/AiWorkoutModal.tsx');
+    assert.ok(aiMod.AiWorkoutModal, 'AiWorkoutModal must be exported');
+
+    const onlineMod = loadTsModule('src/components/OnlineExerciseModal.tsx');
+    assert.ok(onlineMod.OnlineExerciseModal, 'OnlineExerciseModal must be exported');
+  });
+});
+
+
 

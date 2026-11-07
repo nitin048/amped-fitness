@@ -151,11 +151,17 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.modalOverlay}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          style={styles.keyboardContainer}
+        >
           <View style={[styles.modalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
             {/* MODAL HEADER */}
             <View style={[styles.modalHeaderRow, { borderBottomColor: theme.border }]}>
@@ -178,6 +184,7 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
 
             <ScrollView
               style={styles.scrollBody}
+              contentContainerStyle={{ paddingBottom: 24 }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
@@ -480,7 +487,7 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
               {
                 borderTopColor: theme.border,
                 backgroundColor: theme.card,
-                paddingBottom: Math.max(20, insets.bottom + 12),
+                paddingBottom: Math.max(16, insets.bottom),
               },
             ]}
           >
@@ -527,8 +534,8 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
@@ -539,17 +546,27 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
+  keyboardContainer: {
+    width: '100%',
+    height: '92%',
+    justifyContent: 'flex-end',
+  },
   modalCard: {
-    maxHeight: '92%',
+    width: '100%',
+    height: '100%',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
+    borderBottomWidth: 0,
     paddingTop: 18,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
     elevation: 8,
+    overflow: 'hidden',
   },
   modalHeaderRow: {
     flexDirection: 'row',
@@ -578,6 +595,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   scrollBody: {
+    flex: 1,
     paddingHorizontal: 20,
     paddingVertical: 14,
   },

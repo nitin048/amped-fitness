@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   Sparkles,
@@ -51,6 +52,7 @@ export const AiWorkoutModal: React.FC<AiWorkoutModalProps> = ({
   onStartGeneratedWorkout,
   userProfile,
 }) => {
+  const insets = useSafeAreaInsets();
   const [selectedSplit, setSelectedSplit] = useState<string>('Push');
   const [selectedGoal, setSelectedGoal] = useState<string>('Hypertrophy');
   const [selectedEquipment, setSelectedEquipment] = useState<string>('Full Gym');
@@ -145,13 +147,28 @@ export const AiWorkoutModal: React.FC<AiWorkoutModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          style={styles.keyboardContainer}
+        >
+          <View
+            style={[
+              styles.sheetContainer,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+                paddingBottom: Math.max(16, insets.bottom),
+              },
+            ]}
+          >
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: 8 }}>
@@ -428,8 +445,8 @@ export const AiWorkoutModal: React.FC<AiWorkoutModalProps> = ({
             )}
           </ScrollView>
         </View>
+        </KeyboardAvoidingView>
       </View>
-      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -440,13 +457,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.78)',
     justifyContent: 'flex-end',
   },
-  sheetContainer: {
+  keyboardContainer: {
+    width: '100%',
     height: '92%',
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    width: '100%',
+    height: '100%',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
+    borderBottomWidth: 0,
     paddingHorizontal: 20,
     paddingTop: 18,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',

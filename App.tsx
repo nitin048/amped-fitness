@@ -1230,7 +1230,15 @@ const MainScreen = () => {
     day: 'numeric',
   }).toUpperCase();
 
-  const activeWorkoutCalories = Math.max(8, Math.round(sessionSeconds * 0.12));
+  const activeWorkoutCalories = useMemo(() => {
+    if (!isWorkoutActive || sessionSeconds <= 0) return 0;
+    const bw = userProfile?.bodyWeightKg || 75;
+    // Basal MET burn for resistance training: 5.5 METs (kcal = MET * kg * hours)
+    const metBurn = ((5.5 * bw) / 3600) * sessionSeconds;
+    // Mechanical volume expenditure: ~0.0075 kcal per kg-rep lifted
+    const volumeBurn = sessionVolumeKg * 0.0075;
+    return Math.max(1, Math.round(metBurn + volumeBurn));
+  }, [isWorkoutActive, sessionSeconds, userProfile?.bodyWeightKg, sessionVolumeKg]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg, paddingTop: insets.top }]}>

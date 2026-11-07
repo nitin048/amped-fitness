@@ -9,6 +9,7 @@ import {
   Dimensions,
   TextInput,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Target, X, Check, Plus, Minus, Flame, Dumbbell, Utensils, Footprints } from 'lucide-react-native';
 import { ThemePalette } from '../theme/ThemeContext';
@@ -36,6 +37,7 @@ export const DailyTargetsModal: React.FC<DailyTargetsModalProps> = ({
   onClose,
   onTargetsSaved,
 }) => {
+  const insets = useSafeAreaInsets();
   const [volumeKg, setVolumeKg] = useState<number>(5000);
   const [setsCount, setSetsCount] = useState<number>(20);
   const [calories, setCalories] = useState<number>(2400);
@@ -69,9 +71,23 @@ export const DailyTargetsModal: React.FC<DailyTargetsModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={[styles.sheetContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={onClose}
+        />
+        <View
+          style={[
+            styles.sheetContainer,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              paddingBottom: Math.max(16, insets.bottom),
+            },
+          ]}
+        >
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
@@ -97,7 +113,10 @@ export const DailyTargetsModal: React.FC<DailyTargetsModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: Math.max(28, insets.bottom + 16) }}
+          >
             {/* 1. MOVE RING (DAILY VOLUME) */}
             <View style={[styles.targetSectionCard, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
               <View style={styles.cardHeaderRow}>
@@ -525,9 +544,13 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
+    borderBottomWidth: 0,
     paddingHorizontal: 20,
     paddingTop: 18,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',
