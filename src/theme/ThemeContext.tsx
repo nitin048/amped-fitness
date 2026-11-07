@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../db/database';
 
 export type ThemeName =
-  | 'APPLE_FITNESS'
+  | 'APMED_PRO'
   | 'VOLT_DARK'
   | 'BLOOD_IRON'
   | 'CYBER_PULSE'
@@ -56,19 +56,19 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     ringTrackGreen: '#2C2C2E',
     ringTrackCyan: '#3A3A3C',
   },
-  APPLE_FITNESS: {
-    name: 'APPLE_FITNESS',
-    label: 'Apple Fitness',
+  APMED_PRO: {
+    name: 'APMED_PRO',
+    label: 'Apmed Pro',
     isDark: true,
     bg: '#000000',
     card: '#111319',
     cardElevated: '#1A1D26',
     border: 'rgba(255, 255, 255, 0.08)',
-    primary: '#30D158', // Apple Neon Green
+    primary: '#30D158', // Apmed Neon Green
     primaryText: '#000000',
-    accentRed: '#FA114F', // Apple Move Ring Red
-    accentCyan: '#00E5FF', // Apple Stand / Recovery Ring Cyan
-    accentOrange: '#FF9F0A', // Apple Gold / Nutrition
+    accentRed: '#FA114F', // Apmed Move Ring Red
+    accentCyan: '#00E5FF', // Apmed Stand / Recovery Ring Cyan
+    accentOrange: '#FF9F0A', // Apmed Gold / Nutrition
     text: '#FFFFFF',
     subtext: '#8E8E98',
     tertiary: '#48484A',
@@ -226,6 +226,9 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
   },
 };
 
+// Backward-compatibility alias for legacy persistence
+(THEMES as any).APPLE_FITNESS = THEMES.APMED_PRO;
+
 const ThemeContext = createContext<{
   theme: ThemePalette;
   setThemeMode: (mode: ThemeName) => void;
@@ -240,8 +243,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       const row = db.getFirstSync<{ theme_mode: string }>('SELECT theme_mode FROM user_settings WHERE id = 1');
-      if (row?.theme_mode && THEMES[row.theme_mode as ThemeName]) {
-        setTheme(THEMES[row.theme_mode as ThemeName]);
+      const rawMode = row?.theme_mode === 'APPLE_FITNESS' ? 'APMED_PRO' : row?.theme_mode;
+      if (rawMode && THEMES[rawMode as ThemeName]) {
+        setTheme(THEMES[rawMode as ThemeName]);
       } else {
         setTheme(THEMES.MIDNIGHT_OLED);
       }

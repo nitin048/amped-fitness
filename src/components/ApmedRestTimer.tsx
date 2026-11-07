@@ -11,7 +11,7 @@ interface RestTimerProps {
   onAdd30s: () => void;
 }
 
-export const AppleRestTimer: React.FC<RestTimerProps> = ({
+export const ApmedRestTimer: React.FC<RestTimerProps> = ({
   remainingSeconds,
   totalSeconds = 90,
   onSkip,
@@ -91,6 +91,9 @@ export const AppleRestTimer: React.FC<RestTimerProps> = ({
     </View>
   );
 };
+
+// Backward compatibility alias
+export const AppleRestTimer = ApmedRestTimer;
 
 const styles = StyleSheet.create({
   floatingContainer: {

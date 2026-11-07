@@ -10,7 +10,7 @@ interface ActivityRingsProps {
   size?: number;
 }
 
-export const AppleActivityRings: React.FC<ActivityRingsProps> = ({
+export const ApmedActivityRings: React.FC<ActivityRingsProps> = React.memo(({
   volumeProgress = 0.72,
   setsProgress = 0.65,
   recoveryProgress = 0.88,
@@ -21,17 +21,17 @@ export const AppleActivityRings: React.FC<ActivityRingsProps> = ({
   const gap = Math.max(2, Math.round(size * 0.024));
   const center = size / 2;
 
-  // Outer ring (Move / Volume - Apple Pink-Red)
+  // Outer ring (Move / Volume - Apmed Radiant Coral)
   const r1 = center - strokeWidth / 2;
   const c1 = 2 * Math.PI * r1;
   const o1 = c1 * (1 - Math.min(1, Math.max(0.05, volumeProgress)));
 
-  // Middle ring (Exercise / Sets - Apple Lime-Green)
+  // Middle ring (Exercise / Sets - Apmed Lime Accent)
   const r2 = r1 - strokeWidth - gap;
   const c2 = 2 * Math.PI * r2;
   const o2 = c2 * (1 - Math.min(1, Math.max(0.05, setsProgress)));
 
-  // Inner ring (Recovery / Stand - Apple Electric Cyan)
+  // Inner ring (Recovery / Stand - Apmed Electric Cyan)
   const r3 = r2 - strokeWidth - gap;
   const c3 = 2 * Math.PI * r3;
   const o3 = c3 * (1 - Math.min(1, Math.max(0.05, recoveryProgress)));
@@ -139,7 +139,10 @@ export const AppleActivityRings: React.FC<ActivityRingsProps> = ({
       </Svg>
     </View>
   );
-};
+});
+
+// Backward compatibility alias
+export const AppleActivityRings = ApmedActivityRings;
 
 const styles = StyleSheet.create({
   container: {

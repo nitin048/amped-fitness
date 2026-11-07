@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { Sparkles, Moon, Flame, Zap, Droplets, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react-native';
 import { ThemePalette } from '../../theme/ThemeContext';
 
-interface SamsungEnergyScoreCardProps {
+interface ApmedEnergyScoreCardProps {
   theme: ThemePalette;
   volumeProgress: number; // 0 to 1
   setsProgress: number;   // 0 to 1
@@ -22,7 +22,7 @@ interface SamsungEnergyScoreCardProps {
   onOpenRecovery?: () => void;
 }
 
-export const SamsungEnergyScoreCard: React.FC<SamsungEnergyScoreCardProps> = ({
+export const ApmedEnergyScoreCard: React.FC<ApmedEnergyScoreCardProps> = React.memo(({
   theme,
   volumeProgress,
   setsProgress,
@@ -33,7 +33,7 @@ export const SamsungEnergyScoreCard: React.FC<SamsungEnergyScoreCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
-  // Compute composite Samsung Energy Score (0 - 100)
+  // Compute composite Apmed Energy Score (0 - 100)
   // Factors: Recovery (40%), Hydration (20%), Volume/Activity Load (25%), Consistency (15%)
   const rawScore = Math.round(
     recoveryProgress * 0.4 +
@@ -105,7 +105,7 @@ export const SamsungEnergyScoreCard: React.FC<SamsungEnergyScoreCardProps> = ({
             </View>
           </Animated.View>
           <View>
-            <Text style={[styles.eyebrow, { color: theme.subtext }]}>SAMSUNG HEALTH ENGINE</Text>
+            <Text style={[styles.eyebrow, { color: theme.subtext }]}>APMED HEALTH ENGINE</Text>
             <Text style={[styles.cardTitle, { color: theme.text }]}>Energy Score</Text>
           </View>
         </View>
@@ -247,7 +247,7 @@ export const SamsungEnergyScoreCard: React.FC<SamsungEnergyScoreCardProps> = ({
         <View style={[styles.expandedContent, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
           <Text style={[styles.expandedTitle, { color: theme.text }]}>How Your Energy Score Is Computed</Text>
           <Text style={[styles.expandedBody, { color: theme.subtext }]}>
-            Samsung Health calculates Energy Score by synthesizing 4 offline biometrics: resting recovery from logged sets, hydration intake vs daily requirements, training load volume, and sleep continuity.
+            Apmed Health Engine calculates Energy Score by synthesizing 4 offline biometrics: resting recovery from logged sets, hydration intake vs daily requirements, training load volume, and sleep continuity.
           </Text>
           <View style={styles.expandedBullet}>
             <View style={[styles.bulletDot, { backgroundColor: tier.color }]} />
@@ -259,7 +259,7 @@ export const SamsungEnergyScoreCard: React.FC<SamsungEnergyScoreCardProps> = ({
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   cardContainer: {

@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   X,
@@ -61,11 +62,12 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
   exercises,
   theme,
 }) => {
+  const insets = useSafeAreaInsets();
   const isOled = theme.name === 'MIDNIGHT_OLED';
 
   const [routineName, setRoutineName] = useState('');
   const [tagline, setTagline] = useState('');
-  const [selectedSplit, setSelectedSplit] = useState<WorkoutRoutine['split']>('PUSH');
+  const [selectedSplit, setSelectedSplit] = useState<WorkoutRoutine['split'] | null>(null);
   const [durationMinutes, setDurationMinutes] = useState(45);
   const [difficulty, setDifficulty] = useState<WorkoutRoutine['difficulty']>('Intermediate');
   const [selectedExerciseIds, setSelectedExerciseIds] = useState<string[]>([]);
@@ -110,26 +112,21 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
       return;
     }
 
-    if (selectedExerciseIds.length === 0) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Exercises Required', 'Please select at least 1 exercise for this routine.');
-      return;
-    }
-
-    // Auto-calculate target muscles from selected exercises
+    // Auto-calculate target muscles from selected exercises if any
     const selectedExs = exercises.filter((e) => selectedExerciseIds.includes(e.id));
     const targetMuscles = Array.from(
       new Set(selectedExs.map((e) => e.primary_muscle.toUpperCase()))
     );
 
-    const splitMeta = SPLIT_OPTIONS.find((s) => s.id === selectedSplit);
+    const splitVal = selectedSplit || 'FULL_BODY';
+    const splitMeta = SPLIT_OPTIONS.find((s) => s.id === splitVal);
 
     const newRoutine: Omit<WorkoutRoutine, 'isCustom'> = {
       id: `custom_${Date.now()}`,
       name: routineName.trim(),
-      tagline: tagline.trim() || `${selectedSplit} Day hypertrophy and strength`,
-      split: selectedSplit,
-      icon: splitMeta?.icon || 'PUSH',
+      tagline: tagline.trim() || (selectedSplit ? `${selectedSplit} Day hypertrophy and strength` : 'Custom Apmed Routine'),
+      split: splitVal,
+      icon: splitMeta?.icon || 'FULL_BODY',
       estimatedMinutes: durationMinutes,
       difficulty,
       targetMuscles,
@@ -143,6 +140,7 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
       // Reset form
       setRoutineName('');
       setTagline('');
+      setSelectedSplit(null);
       setSelectedExerciseIds([]);
       setSearchQuery('');
       onClose();
@@ -215,9 +213,24 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
               />
             </View>
 
-            {/* 2. SPLIT CATEGORY CHIPS */}
+            {/* 2. SPLIT CATEGORY CHIPS (OPTIONAL) */}
             <View style={styles.sectionBlock}>
-              <Text style={[styles.sectionLabel, { color: theme.subtext }]}>PRIMARY SPLIT</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                <Text style={[styles.sectionLabel, { color: theme.subtext, marginBottom: 0 }]}>
+                  PRIMARY SPLIT (OPTIONAL)
+                </Text>
+                {selectedSplit && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedSplit(null);
+                      Haptics.selectionAsync();
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={{ fontSize: 11, color: theme.primary, fontWeight: '700' }}>None</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6 }}>
                 {SPLIT_OPTIONS.map((opt) => {
                   const isSelected = selectedSplit === opt.id;
@@ -225,7 +238,7 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
                     <TouchableOpacity
                       key={opt.id}
                       onPress={() => {
-                        setSelectedSplit(opt.id);
+                        setSelectedSplit((prev) => (prev === opt.id ? null : opt.id));
                         Haptics.selectionAsync();
                       }}
                       style={[
@@ -461,28 +474,56 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
           </ScrollView>
 
           {/* BOTTOM ACTION BUTTON */}
-          <View style={[styles.modalFooter, { borderTopColor: theme.border }]}>
+          <View
+            style={[
+              styles.modalFooter,
+              {
+                borderTopColor: theme.border,
+                backgroundColor: theme.card,
+                paddingBottom: Math.max(20, insets.bottom + 12),
+              },
+            ]}
+          >
             <TouchableOpacity
               onPress={handleSave}
-              disabled={!routineName.trim() || selectedExerciseIds.length === 0}
+              disabled={!routineName.trim()}
               style={[
                 styles.saveBtn,
                 {
-                  backgroundColor:
-                    routineName.trim() && selectedExerciseIds.length > 0
-                      ? theme.primary
-                      : theme.cardElevated,
-                  opacity: routineName.trim() && selectedExerciseIds.length > 0 ? 1 : 0.5,
+                  backgroundColor: routineName.trim()
+                    ? (isOled ? '#FFFFFF' : theme.primary)
+                    : theme.cardElevated,
+                  borderWidth: 1,
+                  borderColor: routineName.trim()
+                    ? (isOled ? '#FFFFFF' : theme.primary)
+                    : theme.border,
+                  opacity: routineName.trim() ? 1 : 0.45,
                 },
               ]}
               activeOpacity={0.85}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <Check size={18} color={theme.primaryText} />
-                <Text style={[styles.saveBtnText, { color: theme.primaryText }]}>
-                  Save & Create Routine ({selectedExerciseIds.length} Movements)
-                </Text>
-              </View>
+              <Check
+                size={18}
+                color={
+                  routineName.trim()
+                    ? (isOled ? '#000000' : theme.primaryText)
+                    : theme.subtext
+                }
+              />
+              <Text
+                style={[
+                  styles.saveBtnText,
+                  {
+                    color: routineName.trim()
+                      ? (isOled ? '#000000' : theme.primaryText)
+                      : theme.subtext,
+                  },
+                ]}
+              >
+                {selectedExerciseIds.length > 0
+                  ? `Save Routine (${selectedExerciseIds.length} Exercises)`
+                  : 'Save Routine'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -656,18 +697,22 @@ const styles = StyleSheet.create({
   modalFooter: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 24,
     borderTopWidth: 1,
+    width: '100%',
   },
   saveBtn: {
-    paddingVertical: 14,
+    height: 52,
     borderRadius: 16,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    width: '100%',
   },
   saveBtnText: {
-    fontSize: 14,
-    fontWeight: '900',
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });
 

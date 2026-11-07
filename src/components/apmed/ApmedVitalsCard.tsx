@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { Heart, Activity, ChevronRight, Zap } from 'lucide-react-native';
 import { ThemePalette } from '../../theme/ThemeContext';
 
-interface SamsungVitalsCardProps {
+interface ApmedVitalsCardProps {
   theme: ThemePalette;
   heartRate?: number;
   hrvRmssd?: number;
@@ -20,7 +20,7 @@ interface SamsungVitalsCardProps {
   onOpenPpg?: () => void;
 }
 
-export const SamsungVitalsCard: React.FC<SamsungVitalsCardProps> = ({
+export const ApmedVitalsCard: React.FC<ApmedVitalsCardProps> = React.memo(({
   theme,
   heartRate = 62,
   hrvRmssd = 68,
@@ -130,7 +130,7 @@ export const SamsungVitalsCard: React.FC<SamsungVitalsCardProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   cardContainer: {

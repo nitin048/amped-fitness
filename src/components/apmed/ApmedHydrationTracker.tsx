@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { Droplets, Plus, Minus, RotateCcw, CheckCircle } from 'lucide-react-native';
 import { ThemePalette } from '../../theme/ThemeContext';
 
-interface SamsungHydrationWidgetProps {
+interface ApmedHydrationTrackerProps {
   theme: ThemePalette;
   todayWaterMl: number;
   targetWaterMl: number;
@@ -19,7 +19,7 @@ interface SamsungHydrationWidgetProps {
   onResetWater?: () => void;
 }
 
-export const SamsungHydrationWidget: React.FC<SamsungHydrationWidgetProps> = ({
+export const ApmedHydrationTracker: React.FC<ApmedHydrationTrackerProps> = React.memo(({
   theme,
   todayWaterMl = 0,
   targetWaterMl = 3000,
@@ -59,7 +59,7 @@ export const SamsungHydrationWidget: React.FC<SamsungHydrationWidgetProps> = ({
             <Droplets size={14} color={waterColor} />
           </View>
           <View>
-            <Text style={[styles.eyebrow, { color: theme.subtext }]}>SAMSUNG HYDRATION</Text>
+            <Text style={[styles.eyebrow, { color: theme.subtext }]}>APMED HYDRATION ENGINE</Text>
             <Text style={[styles.cardTitle, { color: theme.text }]}>Water Intake</Text>
           </View>
         </View>
@@ -142,7 +142,7 @@ export const SamsungHydrationWidget: React.FC<SamsungHydrationWidgetProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   cardContainer: {

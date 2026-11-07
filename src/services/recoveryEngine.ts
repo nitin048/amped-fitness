@@ -60,7 +60,7 @@ export const getMuscleRecoveryData = (): Record<MuscleGroup, MuscleRecoveryState
         recoveryPercent: 100,
         status: 'OPTIMAL',
         statusLabel: '100% Ready',
-        color: '#30D158', // Apple Green
+        color: '#30D158', // Apmed Green
         lastTrainedHoursAgo: null,
         totalRecentSets: 0,
         totalRecentVolumeKg: 0,
@@ -93,12 +93,12 @@ export const getMuscleRecoveryData = (): Record<MuscleGroup, MuscleRecoveryState
     if (recoveryPercent < 60) {
       status = 'FATIGUED';
       statusLabel = 'High Strain';
-      color = '#FF453A'; // Apple Red
+      color = '#FF453A'; // Apmed Red
       recommendation = `Active muscle fiber remodeling (${Math.round(hoursElapsed)}h ago). Emphasize protein synthesis and sleep.`;
     } else if (recoveryPercent < 85) {
       status = 'RECOVERING';
       statusLabel = 'Rebuilding';
-      color = '#FFD60A'; // Apple Yellow
+      color = '#FFD60A'; // Apmed Yellow
       recommendation = `Secondary recovery phase. Light active recovery or antagonist training recommended.`;
     }
 

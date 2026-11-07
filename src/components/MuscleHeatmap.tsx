@@ -34,7 +34,7 @@ export const MuscleHeatmap: React.FC<Props> = ({ recoveryData, onSelectMuscleFil
 
   return (
     <View style={[styles.container, { backgroundColor: theme.card, borderColor: theme.border }]}>
-      {/* HEADER WITH APPLE HEALTH STYLE */}
+      {/* HEADER WITH APMED RECOVERY ENGINE */}
       <View style={styles.topRow}>
         <View style={{ flex: 1, marginRight: 8 }}>
           <Text style={[styles.eyebrow, { color: theme.subtext }]} numberOfLines={1}>
@@ -395,7 +395,7 @@ export const MuscleHeatmap: React.FC<Props> = ({ recoveryData, onSelectMuscleFil
         })}
       </ScrollView>
 
-      {/* SELECTED MUSCLE HUD CARD (APPLE HEALTH STYLE) */}
+      {/* SELECTED MUSCLE HUD CARD (APMED RECOVERY ENGINE) */}
       <View style={[styles.hudCard, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
         <View style={styles.hudHeader}>
           <View>

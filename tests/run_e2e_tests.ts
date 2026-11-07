@@ -65,6 +65,12 @@ Module.prototype.require = function (modulePath: string) {
       },
     };
   }
+  if (modulePath === 'react-native-safe-area-context') {
+    return {
+      useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+      SafeAreaProvider: ({ children }: any) => children,
+    };
+  }
   if (modulePath === 'react-native-webview') {
     return { WebView: () => null };
   }
@@ -427,7 +433,7 @@ describe('E2E Feature 8: Themes & Minimalist OLED Monochrome System', () => {
   it('THEMES must define all 8 core palettes with 100% complete design tokens', () => {
     const themes = themeModule.THEMES;
     const requiredKeys = [
-      'MIDNIGHT_OLED', 'APPLE_FITNESS', 'VOLT_DARK', 'BLOOD_IRON',
+      'MIDNIGHT_OLED', 'APMED_PRO', 'VOLT_DARK', 'BLOOD_IRON',
       'CYBER_PULSE', 'EMERALD_NIGHT', 'DAYLIGHT', 'SOLAR_LIGHT', 'NORDIC_FROST'
     ];
 
@@ -965,14 +971,14 @@ describe('E2E Feature 22: Persistent Selections & State Synchronization across 4
   });
 
   it('theme mode selected by user should never be overwritten back to default on database re-init', () => {
-    dbModule.saveUserProfile({ themeMode: 'APPLE_FITNESS' });
+    dbModule.saveUserProfile({ themeMode: 'APMED_PRO' });
     let prof = dbModule.getUserProfile();
-    assert.strictEqual(prof.themeMode, 'APPLE_FITNESS');
+    assert.strictEqual(prof.themeMode, 'APMED_PRO');
 
     // Simulate app boot & database re-init
     dbModule.initLocalDatabase();
     prof = dbModule.getUserProfile();
-    assert.strictEqual(prof.themeMode, 'APPLE_FITNESS', 'Selected theme must not revert back to MIDNIGHT_OLED');
+    assert.strictEqual(prof.themeMode, 'APMED_PRO', 'Selected theme must not revert back to MIDNIGHT_OLED');
   });
 
   it('muscle groups from recovery heatmap should map to valid split filters', () => {
@@ -1288,24 +1294,24 @@ describe('E2E Feature 25: App-Wide Input Validation & Real-Time Sanitization Eng
 });
 
 /* =========================================================================
- * FEATURE 26: SAMSUNG HEALTH ONE UI 6/7 DASHBOARD & INTERACTIVE COMPONENTS
+ * FEATURE 26: APMED HEALTH TELEMETRY DASHBOARD & INTERACTIVE COMPONENTS
  * ========================================================================= */
-describe('E2E Feature 26: Samsung Health One UI 6/7 Dashboard & Interactive Components', () => {
-  it('Samsung Health components must be properly exported as React FC components', () => {
-    const energyCardMod = loadTsModule('src/components/samsung/SamsungEnergyScoreCard.tsx');
-    const dailyActMod = loadTsModule('src/components/samsung/SamsungDailyActivityCard.tsx');
-    const weeklyGraphMod = loadTsModule('src/components/samsung/SamsungWeeklyGraph.tsx');
-    const hydrationMod = loadTsModule('src/components/samsung/SamsungHydrationWidget.tsx');
-    const vitalsMod = loadTsModule('src/components/samsung/SamsungVitalsCard.tsx');
+describe('E2E Feature 26: Apmed Health Telemetry Dashboard & Interactive Components', () => {
+  it('Apmed Health components must be properly exported as React FC components', () => {
+    const energyCardMod = loadTsModule('src/components/apmed/ApmedEnergyScoreCard.tsx');
+    const dailyActMod = loadTsModule('src/components/apmed/ApmedDailyActivityCard.tsx');
+    const weeklyGraphMod = loadTsModule('src/components/apmed/ApmedWeeklyGraph.tsx');
+    const hydrationMod = loadTsModule('src/components/apmed/ApmedHydrationTracker.tsx');
+    const vitalsMod = loadTsModule('src/components/apmed/ApmedVitalsCard.tsx');
 
-    assert.strictEqual(typeof energyCardMod.SamsungEnergyScoreCard, 'function');
-    assert.strictEqual(typeof dailyActMod.SamsungDailyActivityCard, 'function');
-    assert.strictEqual(typeof weeklyGraphMod.SamsungWeeklyGraph, 'function');
-    assert.strictEqual(typeof hydrationMod.SamsungHydrationWidget, 'function');
-    assert.strictEqual(typeof vitalsMod.SamsungVitalsCard, 'function');
+    assert.ok(energyCardMod.ApmedEnergyScoreCard, 'ApmedEnergyScoreCard must be exported');
+    assert.ok(dailyActMod.ApmedDailyActivityCard, 'ApmedDailyActivityCard must be exported');
+    assert.ok(weeklyGraphMod.ApmedWeeklyGraph, 'ApmedWeeklyGraph must be exported');
+    assert.ok(hydrationMod.ApmedHydrationTracker, 'ApmedHydrationTracker must be exported');
+    assert.ok(vitalsMod.ApmedVitalsCard, 'ApmedVitalsCard must be exported');
   });
 
-  it('Samsung Energy Score algorithm must accurately weight recovery, hydration and training load', () => {
+  it('Apmed Energy Score algorithm must accurately weight recovery, hydration and training load', () => {
     // Formula: recovery (40%), hydration (20%), activity (25%), baseline (15%)
     const calculateEnergyScore = (
       recoveryProgress: number,
@@ -1340,7 +1346,7 @@ describe('E2E Feature 26: Samsung Health One UI 6/7 Dashboard & Interactive Comp
     assert.strictEqual(maxClamped, 99, 'Score must clamp to maximum ceiling of 99');
   });
 
-  it('Samsung Energy Tier classification must map accurately to sports recovery tiers', () => {
+  it('Apmed Energy Tier classification must map accurately to sports recovery tiers', () => {
     const getEnergyTier = (score: number) => {
       if (score >= 85) return 'Optimal Energy';
       if (score >= 70) return 'Good Readiness';
@@ -1358,7 +1364,7 @@ describe('E2E Feature 26: Samsung Health One UI 6/7 Dashboard & Interactive Comp
     assert.strictEqual(getEnergyTier(35), 'Low Energy');
   });
 
-  it('Samsung Daily Activity ratios must clamp accurately and guard against zero division', () => {
+  it('Apmed Daily Activity ratios must clamp accurately and guard against zero division', () => {
     const getRatios = (steps: number, targetSteps: number, sets: number, targetSets: number, vol: number, targetVol: number) => ({
       stepsRatio: Math.min(1, Math.max(0, steps / Math.max(1, targetSteps))),
       setsRatio: Math.min(1, Math.max(0, sets / Math.max(1, targetSets))),
@@ -1383,7 +1389,7 @@ describe('E2E Feature 26: Samsung Health One UI 6/7 Dashboard & Interactive Comp
     assert.ok(isFinite(zeroTargets.volumeRatio));
   });
 
-  it('Samsung Weekly Graph 7-day data generator must support metric switching and day inspection', () => {
+  it('Apmed Weekly Graph 7-day data generator must support metric switching and day inspection', () => {
     const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const todayIdx = (new Date().getDay() + 6) % 7;
     const daysActive = { 0: true, 1: true, 2: true, 3: false, 4: true, 5: false, 6: false };
@@ -1402,7 +1408,7 @@ describe('E2E Feature 26: Samsung Health One UI 6/7 Dashboard & Interactive Comp
     assert.strictEqual(Boolean(daysActive[3]), false);
   });
 
-  it('Samsung Hydration Widget progress and quick action logging', () => {
+  it('Apmed Hydration Tracker progress and quick action logging', () => {
     const targetWaterMl = 3000;
     let currentWaterMl = 1500;
 
@@ -1427,8 +1433,49 @@ describe('E2E Feature 26: Samsung Health One UI 6/7 Dashboard & Interactive Comp
   });
 });
 
+describe('E2E Feature 27: Exercise Picker & Workout Streamlining Engine', () => {
+  it('ExercisePickerModal module must export ExercisePickerModal', () => {
+    const modalMod = loadTsModule('src/components/ExercisePickerModal.tsx');
+    assert.ok(modalMod.ExercisePickerModal, 'ExercisePickerModal must be exported');
+  });
 
+  it('ExercisePicker search and muscle filtering logic', () => {
+    const sampleExercises = [
+      { id: '1', name: 'Barbell Bench Press', primary_muscle: 'chest', equipment: 'BARBELL', instructions: '', youtube_video_id: '' },
+      { id: '2', name: 'Incline Dumbbell Press', primary_muscle: 'chest', equipment: 'DUMBBELL', instructions: '', youtube_video_id: '' },
+      { id: '3', name: 'Barbell Deadlift', primary_muscle: 'back', equipment: 'BARBELL', instructions: '', youtube_video_id: '' },
+      { id: '4', name: 'Barbell Squat', primary_muscle: 'legs', equipment: 'BARBELL', instructions: '', youtube_video_id: '' },
+    ];
 
+    const filterEx = (query: string, muscle: string) => {
+      return sampleExercises.filter((ex) => {
+        const q = query.toLowerCase().trim();
+        const matchSearch =
+          !q ||
+          ex.name.toLowerCase().includes(q) ||
+          ex.primary_muscle.toLowerCase().includes(q);
+        const matchMuscle =
+          muscle === 'ALL' ||
+          ex.primary_muscle.toUpperCase() === muscle.toUpperCase();
+        return matchSearch && matchMuscle;
+      });
+    };
 
+    // Filter by chest
+    const chestResults = filterEx('', 'CHEST');
+    assert.strictEqual(chestResults.length, 2);
+    assert.strictEqual(chestResults[0].id, '1');
+
+    // Search 'squat'
+    const squatResults = filterEx('squat', 'ALL');
+    assert.strictEqual(squatResults.length, 1);
+    assert.strictEqual(squatResults[0].name, 'Barbell Squat');
+
+    // Filter by back with search 'dead'
+    const deadliftResults = filterEx('dead', 'BACK');
+    assert.strictEqual(deadliftResults.length, 1);
+    assert.strictEqual(deadliftResults[0].id, '3');
+  });
+});
 
 

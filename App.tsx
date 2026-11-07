@@ -15,7 +15,8 @@ import {
   Image as ImageIcon, Key, Search, Check, Layers, ListFilter,
   Globe, Quote, RefreshCw, BookOpen, X, Scale, Compass, Target,
   Droplets, CalendarCheck, Bell, Footprints, Heart, Thermometer, Cpu,
-  Scan, Sliders, Moon, ChevronDown, ChevronUp, TrendingUp, Info, Barcode, Wind
+  Scan, Sliders, Moon, ChevronDown, ChevronUp, TrendingUp, Info, Barcode, Wind,
+  Repeat
 } from 'lucide-react-native';
 
 import {
@@ -48,11 +49,12 @@ import { FoodScanConfirmModal } from './src/components/FoodScanConfirmModal';
 import { MuscleHeatmap } from './src/components/MuscleHeatmap';
 import { getMuscleRecoveryData, MuscleGroup, MuscleRecoveryState, getMobilityProtocol } from './src/services/recoveryEngine';
 import { exportDatabaseBackup, importDatabaseBackup } from './src/services/localBackup';
-import { AppleActivityRings } from './src/components/AppleActivityRings';
+import { ApmedActivityRings } from './src/components/ApmedActivityRings';
 import { OlympicPlateRack } from './src/components/OlympicPlateRack';
-import { AppleRestTimer } from './src/components/AppleRestTimer';
+import { ApmedRestTimer } from './src/components/ApmedRestTimer';
 import { PRESET_ROUTINES, WorkoutRoutine } from './src/db/routines';
 import { CustomRoutineModal } from './src/components/CustomRoutineModal';
+import { ExercisePickerModal } from './src/components/ExercisePickerModal';
 import {
   sanitizeText,
   sanitizeInteger,
@@ -68,11 +70,11 @@ import { StopwatchModal } from './src/components/StopwatchModal';
 import { StepCounterModal } from './src/components/StepCounterModal';
 import { CameraPpgModal } from './src/components/CameraPpgModal';
 import { EnvironmentalRecoveryModal } from './src/components/EnvironmentalRecoveryModal';
-import { SamsungEnergyScoreCard } from './src/components/samsung/SamsungEnergyScoreCard';
-import { SamsungDailyActivityCard } from './src/components/samsung/SamsungDailyActivityCard';
-import { SamsungWeeklyGraph } from './src/components/samsung/SamsungWeeklyGraph';
-import { SamsungHydrationWidget } from './src/components/samsung/SamsungHydrationWidget';
-import { SamsungVitalsCard } from './src/components/samsung/SamsungVitalsCard';
+import { ApmedEnergyScoreCard } from './src/components/apmed/ApmedEnergyScoreCard';
+import { ApmedDailyActivityCard } from './src/components/apmed/ApmedDailyActivityCard';
+import { ApmedWeeklyGraph } from './src/components/apmed/ApmedWeeklyGraph';
+import { ApmedHydrationTracker } from './src/components/apmed/ApmedHydrationTracker';
+import { ApmedVitalsCard } from './src/components/apmed/ApmedVitalsCard';
 import { SensorHubModal } from './src/components/SensorHubModal';
 import { QuickToolsModal } from './src/components/QuickToolsModal';
 import { AlarmRingingModal } from './src/components/AlarmRingingModal';
@@ -99,7 +101,7 @@ import {
 // Initialize SQLite on boot
 initLocalDatabase();
 
-type AppleTab = 'SUMMARY' | 'WORKOUT' | 'RECOVERY' | 'NUTRITION';
+type ApmedTab = 'SUMMARY' | 'WORKOUT' | 'RECOVERY' | 'NUTRITION';
 
 interface SessionSetRecord {
   exerciseId: string;
@@ -127,8 +129,8 @@ const MainScreen = () => {
   const insets = useSafeAreaInsets();
   const { theme, setThemeMode } = useTheme();
   const isOled = theme.name === 'MIDNIGHT_OLED';
-  const [activeTab, setActiveTab] = useState<AppleTab>('SUMMARY');
-  const [summaryDashboardView, setSummaryDashboardView] = useState<'SAMSUNG' | 'RINGS'>('SAMSUNG');
+  const [activeTab, setActiveTab] = useState<ApmedTab>('SUMMARY');
+  const [summaryDashboardView, setSummaryDashboardView] = useState<'APMED_HEALTH' | 'APMED_RINGS'>('APMED_HEALTH');
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showRingsInfoModal, setShowRingsInfoModal] = useState<boolean>(false);
   const [showTargetsModal, setShowTargetsModal] = useState<boolean>(false);
@@ -224,6 +226,7 @@ const MainScreen = () => {
   const [routineFilterTab, setRoutineFilterTab] = useState<'ALL' | 'PRESET' | 'CUSTOM'>('ALL');
   const [workoutViewMode, setWorkoutViewMode] = useState<'ROUTINES' | 'EXERCISES'>('ROUTINES');
   const [selectedEx, setSelectedEx] = useState<Exercise | null>(null);
+  const [showExercisePickerModal, setShowExercisePickerModal] = useState<boolean>(false);
   const [currentSetNumber, setCurrentSetNumber] = useState<number>(1);
   const [weightKg, setWeightKg] = useState<number>(80);
   const [repsCount, setRepsCount] = useState<number>(8);
@@ -657,8 +660,9 @@ const MainScreen = () => {
   };
 
   // Workout Session Handlers
-  const handleStartWorkout = (routine?: WorkoutRoutine, customTitle?: string) => {
-    const routineObj = routine || selectedRoutine;
+  const handleStartWorkout = (routine?: WorkoutRoutine | null, customTitle?: string) => {
+    const isExplicitEmpty = routine === null || (!routine && customTitle);
+    const routineObj = isExplicitEmpty ? null : (routine !== undefined ? routine : selectedRoutine);
     const name = customTitle || (routineObj ? routineObj.name : 'Traditional Strength Training');
     setActiveWorkoutName(name);
 
@@ -666,6 +670,11 @@ const MainScreen = () => {
       setSelectedRoutine(routineObj);
       const firstEx = exercises.find((e) => routineObj.exerciseIds.includes(e.id));
       if (firstEx) setSelectedEx(firstEx);
+    } else {
+      setSelectedRoutine(null);
+      if (!selectedEx && exercises.length > 0) {
+        setSelectedEx(exercises[0]);
+      }
     }
 
     setIsWorkoutActive(true);
@@ -1306,7 +1315,7 @@ const MainScreen = () => {
       </View>
 
       {/* FLOATING REST TIMER */}
-      <AppleRestTimer
+      <ApmedRestTimer
         remainingSeconds={restSeconds}
         totalSeconds={userProfile.defaultRestSeconds || 90}
         onSkip={() => setRestSeconds(0)}
@@ -1335,7 +1344,7 @@ const MainScreen = () => {
         {activeTab === 'SUMMARY' && (
           /* ================= TAB 1: SUMMARY ================= */
           <View>
-            {/* SEGMENTED DASHBOARD VIEW SWITCHER (SAMSUNG HEALTH vs ACTIVITY RINGS) */}
+            {/* SEGMENTED DASHBOARD VIEW SWITCHER (APMED HEALTH vs APMED RINGS) */}
             <View
               style={[
                 styles.segmentSwitcherContainer,
@@ -1344,19 +1353,19 @@ const MainScreen = () => {
             >
               <TouchableOpacity
                 onPress={() => {
-                  setSummaryDashboardView('SAMSUNG');
+                  setSummaryDashboardView('APMED_HEALTH');
                   Haptics.selectionAsync();
                 }}
                 style={[
                   styles.segmentSwitcherTab,
-                  summaryDashboardView === 'SAMSUNG' && { backgroundColor: isOled ? '#FFFFFF' : theme.primary },
+                  summaryDashboardView === 'APMED_HEALTH' && { backgroundColor: isOled ? '#FFFFFF' : theme.primary },
                 ]}
                 activeOpacity={0.8}
               >
                 <Zap
                   size={14}
                   color={
-                    summaryDashboardView === 'SAMSUNG'
+                    summaryDashboardView === 'APMED_HEALTH'
                       ? (isOled ? '#000000' : theme.primaryText)
                       : theme.subtext
                   }
@@ -1366,32 +1375,32 @@ const MainScreen = () => {
                     styles.segmentSwitcherText,
                     {
                       color:
-                        summaryDashboardView === 'SAMSUNG'
+                        summaryDashboardView === 'APMED_HEALTH'
                           ? (isOled ? '#000000' : theme.primaryText)
                           : theme.subtext,
                       fontWeight: '800',
                     },
                   ]}
                 >
-                  Samsung Health
+                  Apmed Health
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => {
-                  setSummaryDashboardView('RINGS');
+                  setSummaryDashboardView('APMED_RINGS');
                   Haptics.selectionAsync();
                 }}
                 style={[
                   styles.segmentSwitcherTab,
-                  summaryDashboardView === 'RINGS' && { backgroundColor: isOled ? '#FFFFFF' : theme.primary },
+                  summaryDashboardView === 'APMED_RINGS' && { backgroundColor: isOled ? '#FFFFFF' : theme.primary },
                 ]}
                 activeOpacity={0.8}
               >
                 <Activity
                   size={14}
                   color={
-                    summaryDashboardView === 'RINGS'
+                    summaryDashboardView === 'APMED_RINGS'
                       ? (isOled ? '#000000' : theme.primaryText)
                       : theme.subtext
                   }
@@ -1401,23 +1410,23 @@ const MainScreen = () => {
                     styles.segmentSwitcherText,
                     {
                       color:
-                        summaryDashboardView === 'RINGS'
+                        summaryDashboardView === 'APMED_RINGS'
                           ? (isOled ? '#000000' : theme.primaryText)
                           : theme.subtext,
                       fontWeight: '800',
                     },
                   ]}
                 >
-                  Activity Rings
+                  Apmed Rings
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {summaryDashboardView === 'SAMSUNG' ? (
-              /* ================= SAMSUNG HEALTH ONE UI 6/7 VIEW ================= */
+            {summaryDashboardView === 'APMED_HEALTH' ? (
+              /* ================= APMED HEALTH TELEMETRY VIEW ================= */
               <View>
-                {/* 1. SAMSUNG ENERGY SCORE WITH CIRCULAR GAUGE & SUB-METRICS */}
-                <SamsungEnergyScoreCard
+                {/* 1. APMED ENERGY SCORE WITH CIRCULAR GAUGE & SUB-METRICS */}
+                <ApmedEnergyScoreCard
                   theme={theme}
                   volumeProgress={volumeProgress}
                   setsProgress={setsProgress}
@@ -1434,7 +1443,7 @@ const MainScreen = () => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                       setActiveTab('WORKOUT');
                     }}
-                    style={[styles.appleWorkoutTile, { backgroundColor: theme.cardElevated, borderColor: theme.primary, marginBottom: 14 }]}
+                    style={[styles.apmedWorkoutTile, { backgroundColor: theme.cardElevated, borderColor: theme.primary, marginBottom: 14 }]}
                   >
                     <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}25` }]}>
                       <Flame size={24} color={theme.primary} />
@@ -1458,7 +1467,7 @@ const MainScreen = () => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                       setActiveTab('WORKOUT');
                     }}
-                    style={[styles.appleWorkoutTile, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 14 }]}
+                    style={[styles.apmedWorkoutTile, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 14 }]}
                   >
                     <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}20` }]}>
                       <Play size={22} color={theme.primary} fill={theme.primary} />
@@ -1477,8 +1486,8 @@ const MainScreen = () => {
                   </TouchableOpacity>
                 )}
 
-                {/* 3. SAMSUNG DAILY ACTIVITY 3-PILLARS PROGRESS CARD */}
-                <SamsungDailyActivityCard
+                {/* 3. APMED DAILY ACTIVITY 3-PILLARS PROGRESS CARD */}
+                <ApmedDailyActivityCard
                   theme={theme}
                   currentSteps={stepTracker.steps}
                   targetSteps={userProfile.targetDailySteps || 10000}
@@ -1492,7 +1501,7 @@ const MainScreen = () => {
                 />
 
                 {/* 4. INTERACTIVE 7-DAY WEEKLY GRAPH WITH METRIC SWITCHER */}
-                <SamsungWeeklyGraph
+                <ApmedWeeklyGraph
                   theme={theme}
                   daysActive={weeklyConsistency.daysActive}
                   todayVolumeKg={dailySummary.totalVolumeKg}
@@ -1503,7 +1512,7 @@ const MainScreen = () => {
                 />
 
                 {/* 5. LIQUID WAVE HYDRATION TRACKER WITH QUICK PRESETS */}
-                <SamsungHydrationWidget
+                <ApmedHydrationTracker
                   theme={theme}
                   todayWaterMl={todayWaterMl}
                   targetWaterMl={userProfile.targetWaterMl || 3000}
@@ -1512,7 +1521,7 @@ const MainScreen = () => {
                 />
 
                 {/* 6. LIVE VITALS & ECG WAVEFORM CARD */}
-                <SamsungVitalsCard
+                <ApmedVitalsCard
                   theme={theme}
                   heartRate={latestWellness?.heartRateBpm ?? 62}
                   hrvRmssd={latestWellness?.hrvRmssd ?? 68}
@@ -1521,10 +1530,10 @@ const MainScreen = () => {
                 />
               </View>
             ) : (
-              /* ================= CLASSIC APPLE ACTIVITY RINGS VIEW ================= */
+              /* ================= APMED ACTIVITY RINGS VIEW ================= */
               <View>
                 {/* HERO ACTIVITY RINGS CARD (100% DYNAMIC) */}
-                <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                   <View style={styles.cardHeaderRow}>
                     <View>
                       <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>ATHLETIC EFFORT & ENERGY</Text>
@@ -1546,7 +1555,7 @@ const MainScreen = () => {
 
                   {/* READ-ONLY VIEW: ACTIVITY RINGS & LEGEND (EDIT VIA DEDICATED HEADER BTN) */}
                   <View style={styles.ringsSectionRow}>
-                    <AppleActivityRings
+                    <ApmedActivityRings
                       volumeProgress={volumeProgress}
                       setsProgress={setsProgress}
                       recoveryProgress={readinessProgress}
@@ -1645,14 +1654,14 @@ const MainScreen = () => {
                   </View>
                 </View>
 
-                {/* PROMINENT WORKOUT ACTION HERO (HEVY / APPLE STYLE) */}
+                {/* PROMINENT WORKOUT ACTION HERO (APMED ENGINE) */}
                 {isWorkoutActive ? (
                   <TouchableOpacity
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                       setActiveTab('WORKOUT');
                     }}
-                    style={[styles.appleWorkoutTile, { backgroundColor: theme.cardElevated, borderColor: theme.primary, marginBottom: 14 }]}
+                    style={[styles.apmedWorkoutTile, { backgroundColor: theme.cardElevated, borderColor: theme.primary, marginBottom: 14 }]}
                   >
                     <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}25` }]}>
                       <Flame size={24} color={theme.primary} />
@@ -1676,7 +1685,7 @@ const MainScreen = () => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                       setActiveTab('WORKOUT');
                     }}
-                    style={[styles.appleWorkoutTile, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 14 }]}
+                    style={[styles.apmedWorkoutTile, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 14 }]}
                   >
                     <View style={[styles.workoutIconCircle, { backgroundColor: `${theme.primary}20` }]}>
                       <Play size={22} color={theme.primary} fill={theme.primary} />
@@ -1828,7 +1837,7 @@ const MainScreen = () => {
                 </View>
 
                 {/* WEEKLY CONSISTENCY & GOAL TRACKER CARD */}
-                <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                   <View style={styles.cardHeaderRow}>
                     <View>
                       <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>WEEKLY ATHLETE CONSISTENCY</Text>
@@ -1918,7 +1927,7 @@ const MainScreen = () => {
 
             {/* RECENT SESSIONS HISTORY */}
             {recentSessions.length > 0 && (
-              <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border, marginTop: 4 }]}>
+              <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border, marginTop: 4 }]}>
                 <View style={styles.cardHeaderRow}>
                   <View>
                     <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>SAVED WORKOUT SESSIONS</Text>
@@ -1958,7 +1967,7 @@ const MainScreen = () => {
             )}
 
             {/* TODAY'S COMPLETED SETS FEED */}
-            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View>
                   <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>SESSION TIMELINE</Text>
@@ -2158,9 +2167,9 @@ const MainScreen = () => {
                   <View>
                     {/* INSTANT START HERO CARD: START EMPTY WORKOUT */}
                     <TouchableOpacity
-                      onPress={() => handleStartWorkout(undefined, 'Quick Strength Workout')}
+                      onPress={() => handleStartWorkout(null, 'Quick Strength Workout')}
                       style={[
-                        styles.appleCard,
+                        styles.apmedCard,
                         {
                           backgroundColor: theme.card,
                           borderColor: theme.primary,
@@ -2315,7 +2324,7 @@ const MainScreen = () => {
                       {displayedRoutines.length === 0 ? (
                         <View
                           style={[
-                            styles.appleCard,
+                            styles.apmedCard,
                             {
                               backgroundColor: theme.card,
                               borderColor: theme.border,
@@ -2382,7 +2391,7 @@ const MainScreen = () => {
                               key={routine.id}
                               onPress={() => handleStartWorkout(routine)}
                               style={[
-                                styles.appleCard,
+                                styles.apmedCard,
                                 {
                                   backgroundColor: theme.card,
                                   borderColor: theme.border,
@@ -2539,7 +2548,7 @@ const MainScreen = () => {
                           <View
                             key={ex.id}
                             style={[
-                              styles.appleCard,
+                              styles.apmedCard,
                               {
                                 backgroundColor: isExpanded ? theme.cardElevated : theme.card,
                                 borderColor: isExpanded ? theme.primary : theme.border,
@@ -2702,7 +2711,7 @@ const MainScreen = () => {
                   </Text>
 
                   {/* ROUTINE EXERCISE NAVIGATION ROW (WHEN ACTIVE) */}
-                  {selectedRoutine && currentRoutineExIndex >= 0 && (
+                  {selectedRoutine && currentRoutineExIndex >= 0 ? (
                     <View style={[styles.routineNavRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
                       <TouchableOpacity
                         onPress={handlePrevRoutineExercise}
@@ -2714,9 +2723,19 @@ const MainScreen = () => {
                         <Text style={[styles.routineNavBtnText, { color: theme.text }]}>Prev</Text>
                       </TouchableOpacity>
 
-                      <Text style={[styles.routineNavProgressText, { color: theme.subtext }]}>
-                        Exercise <Text style={{ color: theme.primary, fontWeight: '900' }}>{currentRoutineExIndex + 1}</Text> of {selectedRoutine.exerciseIds.length}
-                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setShowExercisePickerModal(true);
+                        }}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.routineNavProgressText, { color: theme.subtext }]}>
+                          Exercise <Text style={{ color: theme.primary, fontWeight: '900' }}>{currentRoutineExIndex + 1}</Text> of {selectedRoutine.exerciseIds.length}
+                        </Text>
+                        <ChevronDown size={13} color={theme.primary} />
+                      </TouchableOpacity>
 
                       <TouchableOpacity
                         onPress={handleNextRoutineExercise}
@@ -2726,6 +2745,32 @@ const MainScreen = () => {
                       >
                         <Text style={[styles.routineNavBtnText, { color: theme.primary }]}>Next</Text>
                         <ChevronRight size={14} color={theme.primary} />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View style={{ alignItems: 'center', marginTop: 4, marginBottom: 8 }}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setShowExercisePickerModal(true);
+                        }}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 6,
+                          paddingHorizontal: 14,
+                          paddingVertical: 7,
+                          borderRadius: 12,
+                          backgroundColor: `${theme.primary}15`,
+                          borderWidth: 1,
+                          borderColor: `${theme.primary}35`,
+                        }}
+                        activeOpacity={0.75}
+                      >
+                        <Repeat size={12} color={theme.primary} />
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: theme.primary }}>
+                          {selectedEx ? `Switch Movement (${selectedEx.name})` : 'Choose Movement to Log'}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -2790,14 +2835,80 @@ const MainScreen = () => {
                   </View>
                 </View>
 
-            {/* ACTIVE HEVY-STYLE FOCUSED WORKOUT SET LOGGER */}
+            {/* EMPTY MOVEMENT SELECTION CARD IF NONE SELECTED */}
+            {!selectedEx && (isWorkoutActive || showQuickLogger) && (
+              <View
+                style={[
+                  styles.apmedCard,
+                  {
+                    backgroundColor: theme.cardElevated,
+                    borderColor: theme.border,
+                    alignItems: 'center',
+                    paddingVertical: 30,
+                    paddingHorizontal: 20,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: `${theme.primary}18`,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 12,
+                  }}
+                >
+                  <Dumbbell size={24} color={theme.primary} />
+                </View>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text, marginBottom: 4 }}>
+                  No Movement Selected
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: theme.subtext,
+                    textAlign: 'center',
+                    lineHeight: 18,
+                    marginBottom: 16,
+                    maxWidth: 280,
+                  }}
+                >
+                  Select an exercise from your routine or library to log weights, reps, and start tracking.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setShowExercisePickerModal(true);
+                  }}
+                  style={{
+                    paddingHorizontal: 18,
+                    paddingVertical: 10,
+                    borderRadius: 14,
+                    backgroundColor: theme.primary,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Dumbbell size={14} color={theme.primaryText} />
+                  <Text style={{ fontSize: 13, fontWeight: '900', color: theme.primaryText }}>
+                    Choose Movement to Log
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* ACTIVE APMED FOCUSED WORKOUT SET LOGGER */}
             {selectedEx && (isWorkoutActive || showQuickLogger) && (
-              <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 {/* SET INDICATOR & UTILITY TOOLBAR */}
                 <View style={styles.setCounterRow}>
                   <View style={{ flex: 1, paddingRight: 8 }}>
                     <Text style={[styles.setCounterLabel, { color: theme.subtext }]} numberOfLines={1}>
-                      SET {isWorkoutActive ? sessionSetsCount + 1 : currentSetNumber} • {selectedEx.primary_muscle}
+                      SET {isWorkoutActive ? sessionSetsCount + 1 : currentSetNumber} • {selectedEx.primary_muscle.toUpperCase()}
                     </Text>
                     <Text
                       style={[styles.activeExerciseTitle, { color: theme.text }]}
@@ -2809,8 +2920,30 @@ const MainScreen = () => {
                     </Text>
                   </View>
 
-                  {/* 4-TOOL ICON PILLS (HEVY PATTERN) */}
+                  {/* 4-TOOL ICON PILLS (APMED PATTERN) */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setShowExercisePickerModal(true);
+                      }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4,
+                        paddingHorizontal: 8,
+                        paddingVertical: 5,
+                        borderRadius: 8,
+                        backgroundColor: `${theme.primary}18`,
+                        borderWidth: 1,
+                        borderColor: `${theme.primary}40`,
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <Repeat size={12} color={theme.primary} />
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: theme.primary }}>Switch</Text>
+                    </TouchableOpacity>
+
                     <TouchableOpacity
                       onPress={() => {
                         Haptics.selectionAsync();
@@ -2955,7 +3088,7 @@ const MainScreen = () => {
                   })}
                 </View>
 
-                {/* APPLE WATCH DIGITAL STEPPERS */}
+                {/* APMED PRECISION DIGITAL STEPPERS */}
                 <View style={styles.steppersContainer}>
                   {/* WEIGHT STEPPER */}
                   <View style={[styles.stepperBox, { backgroundColor: theme.cardElevated, borderColor: theme.border }]}>
@@ -3106,7 +3239,7 @@ const MainScreen = () => {
                 {/* PRIMARY COMPLETE SET ACTION BUTTON (IMMEDIATELY ACCESSIBLE) */}
                 <TouchableOpacity
                   onPress={handleCompleteSet}
-                  style={[styles.applePrimaryBtn, { backgroundColor: theme.primary, marginTop: 14 }]}
+                  style={[styles.apmedPrimaryBtn, { backgroundColor: theme.primary, marginTop: 14 }]}
                   activeOpacity={0.85}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -3115,7 +3248,7 @@ const MainScreen = () => {
                       numberOfLines={1}
                       adjustsFontSizeToFit
                       minimumFontScale={0.8}
-                      style={[styles.applePrimaryBtnText, { color: theme.primaryText }]}>
+                      style={[styles.apmedPrimaryBtnText, { color: theme.primaryText }]}>
                       Log Set & Start Rest Timer
                     </Text>
                   </View>
@@ -3354,6 +3487,39 @@ const MainScreen = () => {
                     ))}
                   </View>
                 )}
+
+                {/* NEXT EXERCISE / SWITCH MOVEMENT ACTION BUTTON */}
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (hasNextRoutineEx && nextRoutineEx) {
+                      handleNextRoutineExercise();
+                    } else {
+                      setShowExercisePickerModal(true);
+                    }
+                  }}
+                  style={{
+                    marginTop: 14,
+                    paddingVertical: 12,
+                    borderRadius: 14,
+                    backgroundColor: theme.cardElevated,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Dumbbell size={15} color={theme.primary} />
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: theme.text }}>
+                    {hasNextRoutineEx && nextRoutineEx
+                      ? `Next: ${nextRoutineEx.name}`
+                      : 'Switch to Another Movement'}
+                  </Text>
+                  <ChevronRight size={15} color={theme.primary} />
+                </TouchableOpacity>
               </View>
             )}
               </View>
@@ -3424,7 +3590,7 @@ const MainScreen = () => {
             </View>
 
             {/* 2. DYNAMIC BIO-READINESS HERO CARD (WITH EFFECTIVE READINESS SCORE) */}
-            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View>
                   <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>SYSTEMIC BIO-READINESS</Text>
@@ -3603,7 +3769,7 @@ const MainScreen = () => {
 
             {/* 4. TARGETED GUIDED MOBILITY PROTOCOL (FOR MOST FATIGUED MUSCLE) */}
             {mostFatiguedMuscle && recommendedMobility.length > 0 && (
-              <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <View style={styles.cardHeaderRow}>
                   <View>
                     <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>
@@ -3642,7 +3808,7 @@ const MainScreen = () => {
             )}
 
             {/* 5. INTERACTIVE DAILY RECOVERY CHECKLIST */}
-            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View>
                   <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>DAILY DISCIPLINE</Text>
@@ -3699,7 +3865,7 @@ const MainScreen = () => {
             </View>
 
             {/* LOCAL SQLITE BACKUP VAULT */}
-            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View>
                   <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>DATA OWNERSHIP</Text>
@@ -3741,7 +3907,7 @@ const MainScreen = () => {
           /* ================= TAB 4: NUTRITION ================= */
           <View>
             {/* MACRO SUMMARY HERO */}
-            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View>
                   <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>ENERGY & MACRONUTRIENTS</Text>
@@ -3938,7 +4104,7 @@ const MainScreen = () => {
               </View>
 
               {/* ADAPTIVE ENERGY BALANCE & TDEE CARD */}
-              <View style={[styles.appleCard, { backgroundColor: theme.cardElevated, borderColor: theme.border, marginTop: 14 }]}>
+              <View style={[styles.apmedCard, { backgroundColor: theme.cardElevated, borderColor: theme.border, marginTop: 14 }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View>
                     <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>METABOLIC ENERGY BALANCE</Text>
@@ -4041,7 +4207,7 @@ const MainScreen = () => {
             </View>
 
             {/* 3. 1-TAP QUICK GYM STAPLES */}
-            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <View>
                   <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>INSTANT LOG</Text>
@@ -4097,7 +4263,7 @@ const MainScreen = () => {
             </View>
 
             {/* 4. SMART FOOD SEARCH & AI SCAN */}
-            <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={styles.cardHeaderRow}>
                 <View>
                   <Text style={[styles.cardEyebrow, { color: theme.subtext }]}>GLOBAL DATABASE</Text>
@@ -4215,11 +4381,11 @@ const MainScreen = () => {
                   <TouchableOpacity
                     onPress={() => handlePickFoodImage('camera')}
                     disabled={isScanningFood || isAnalyzingFood}
-                    style={[styles.applePrimaryBtn, { flex: 1, backgroundColor: theme.primary, marginTop: 0 }]}
+                    style={[styles.apmedPrimaryBtn, { flex: 1, backgroundColor: theme.primary, marginTop: 0 }]}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Camera size={16} color={theme.primaryText} />
-                      <Text style={[styles.applePrimaryBtnText, { color: theme.primaryText }]}>
+                      <Text style={[styles.apmedPrimaryBtnText, { color: theme.primaryText }]}>
                         {isAnalyzingFood ? 'ANALYZING...' : 'CAMERA'}
                       </Text>
                     </View>
@@ -4228,11 +4394,11 @@ const MainScreen = () => {
                   <TouchableOpacity
                     onPress={() => handlePickFoodImage('library')}
                     disabled={isScanningFood || isAnalyzingFood}
-                    style={[styles.appleSecondaryBtn, { flex: 1, backgroundColor: theme.cardElevated, borderColor: theme.border, marginTop: 0 }]}
+                    style={[styles.apmedSecondaryBtn, { flex: 1, backgroundColor: theme.cardElevated, borderColor: theme.border, marginTop: 0 }]}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <ImageIcon size={16} color={theme.text} />
-                      <Text style={[styles.appleSecondaryBtnText, { color: theme.text }]}>
+                      <Text style={[styles.apmedSecondaryBtnText, { color: theme.text }]}>
                         GALLERY
                       </Text>
                     </View>
@@ -4272,7 +4438,7 @@ const MainScreen = () => {
             <View style={{ marginTop: 14 }}>
               <Text style={[styles.sectionMainTitle, { color: theme.text }]}>Logged Meals</Text>
               {meals.length === 0 ? (
-                <View style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border, alignItems: 'center', marginTop: 10 }]}>
+                <View style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border, alignItems: 'center', marginTop: 10 }]}>
                   <Utensils size={32} color={theme.border} style={{ marginVertical: 8 }} />
                   <Text style={[styles.emptyFeedText, { color: theme.subtext }]}>No meals logged today yet.</Text>
                   <Text style={[styles.emptyFeedSub, { color: theme.tertiary }]}>Snap a photo or search Open Food Facts database.</Text>
@@ -4283,7 +4449,7 @@ const MainScreen = () => {
                   return (
                     <View
                       key={meal.id}
-                      style={[styles.appleCard, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 12 }]}
+                      style={[styles.apmedCard, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 12 }]}
                     >
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         {meal.local_image_uri && (
@@ -4464,6 +4630,21 @@ const MainScreen = () => {
         exercises={exercises}
         onClose={() => setShowCustomRoutineModal(false)}
         onRoutineCreated={handleCustomRoutineCreated}
+      />
+
+      {/* EXERCISE PICKER / MOVEMENT SELECTOR MODAL */}
+      <ExercisePickerModal
+        visible={showExercisePickerModal}
+        theme={theme}
+        exercises={exercises}
+        currentRoutine={selectedRoutine}
+        currentExerciseId={selectedEx?.id}
+        onClose={() => setShowExercisePickerModal(false)}
+        onSelectExercise={(newEx) => {
+          setSelectedEx(newEx);
+          setShowVideo(false);
+          setCurrentSetNumber(1);
+        }}
       />
 
       {/* WORKOUT SUMMARY CELEBRATION MODAL (ON END WORKOUT) */}
@@ -4709,7 +4890,7 @@ const MainScreen = () => {
                   Haptics.selectionAsync();
                 }}
                 style={[
-                  styles.applePrimaryBtn,
+                  styles.apmedPrimaryBtn,
                   {
                     flex: 1,
                     backgroundColor: theme.cardElevated,
@@ -4723,13 +4904,13 @@ const MainScreen = () => {
                 ]}
               >
                 <Target size={16} color={theme.primary} />
-                <Text style={[styles.applePrimaryBtnText, { color: theme.text, fontSize: 13 }]}>Edit Targets</Text>
+                <Text style={[styles.apmedPrimaryBtnText, { color: theme.text, fontSize: 13 }]}>Edit Targets</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setShowRingsInfoModal(false)}
-                style={[styles.applePrimaryBtn, { flex: 1, backgroundColor: theme.primary }]}
+                style={[styles.apmedPrimaryBtn, { flex: 1, backgroundColor: theme.primary }]}
               >
-                <Text style={[styles.applePrimaryBtnText, { color: theme.primaryText }]}>Got it</Text>
+                <Text style={[styles.apmedPrimaryBtnText, { color: theme.primaryText }]}>Got it</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -5024,7 +5205,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 0.2,
   },
-  appleCard: {
+  apmedCard: {
     borderRadius: 24,
     padding: 20,
     marginBottom: 16,
@@ -5143,7 +5324,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  appleWorkoutTile: {
+  apmedWorkoutTile: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 20,
@@ -5812,26 +5993,26 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.5,
   },
-  applePrimaryBtn: {
+  apmedPrimaryBtn: {
     borderRadius: 18,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 14,
   },
-  applePrimaryBtnText: {
+  apmedPrimaryBtnText: {
     fontSize: 14,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
-  appleSecondaryBtn: {
+  apmedSecondaryBtn: {
     borderRadius: 18,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
-  appleSecondaryBtnText: {
+  apmedSecondaryBtnText: {
     fontSize: 14,
     fontWeight: '800',
   },
@@ -6034,7 +6215,7 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 1.5,
   },
-  appleTabBar: {
+  apmedTabBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,

@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { Footprints, Dumbbell, Flame, ChevronRight, Heart } from 'lucide-react-native';
 import { ThemePalette } from '../../theme/ThemeContext';
 
-interface SamsungDailyActivityCardProps {
+interface ApmedDailyActivityCardProps {
   theme: ThemePalette;
   currentSteps: number;
   targetSteps: number;
@@ -24,7 +24,7 @@ interface SamsungDailyActivityCardProps {
   onOpenTargets?: () => void;
 }
 
-export const SamsungDailyActivityCard: React.FC<SamsungDailyActivityCardProps> = ({
+export const ApmedDailyActivityCard: React.FC<ApmedDailyActivityCardProps> = React.memo(({
   theme,
   currentSteps = 0,
   targetSteps = 10000,
@@ -194,7 +194,7 @@ export const SamsungDailyActivityCard: React.FC<SamsungDailyActivityCardProps> =
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   cardContainer: {

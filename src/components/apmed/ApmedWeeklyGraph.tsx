@@ -24,7 +24,7 @@ interface DayGraphData {
   isGoalMet: boolean;
 }
 
-interface SamsungWeeklyGraphProps {
+interface ApmedWeeklyGraphProps {
   theme: ThemePalette;
   daysActive: boolean[] | { [dayIndex: number]: boolean };
   todayVolumeKg: number;
@@ -34,7 +34,7 @@ interface SamsungWeeklyGraphProps {
   recentSessionsCount: number;
 }
 
-export const SamsungWeeklyGraph: React.FC<SamsungWeeklyGraphProps> = ({
+export const ApmedWeeklyGraph: React.FC<ApmedWeeklyGraphProps> = React.memo(({
   theme,
   daysActive = [true, true, true, false, true, false, false],
   todayVolumeKg = 3800,
@@ -303,7 +303,7 @@ export const SamsungWeeklyGraph: React.FC<SamsungWeeklyGraphProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   cardContainer: {
