@@ -28,6 +28,7 @@ import {
   getAthleteStrengthScore,
   AthleteStrengthResult,
 } from '../utils/strengthFormulas';
+import { sanitizeWeightInput } from '../utils/inputValidation';
 
 interface AthleteStrengthModalProps {
   visible: boolean;
@@ -205,8 +206,12 @@ export const AthleteStrengthModal: React.FC<AthleteStrengthModalProps> = ({
                   <Text style={[styles.fieldLabel, { color: theme.subtext }]}>BODY WEIGHT (KG)</Text>
                   <TextInput
                     value={String(bodyWeight)}
-                    onChangeText={(t) => setBodyWeight(parseFloat(t) || 0)}
+                    onChangeText={(t) => {
+                      const s = sanitizeWeightInput(t);
+                      setBodyWeight(Math.min(300, parseFloat(s) || 0));
+                    }}
                     keyboardType="numeric"
+                    maxLength={5}
                     style={[styles.inputBox, { color: theme.text, backgroundColor: theme.card, borderColor: theme.border }]}
                   />
                 </View>
@@ -232,8 +237,12 @@ export const AthleteStrengthModal: React.FC<AthleteStrengthModalProps> = ({
                   <View style={styles.liftInputContainer}>
                     <TextInput
                       value={String(benchKg)}
-                      onChangeText={(t) => setBenchKg(parseFloat(t) || 0)}
+                      onChangeText={(t) => {
+                        const s = sanitizeWeightInput(t);
+                        setBenchKg(Math.min(400, parseFloat(s) || 0));
+                      }}
                       keyboardType="numeric"
+                      maxLength={5}
                       style={[styles.liftInput, { color: theme.text, backgroundColor: theme.card, borderColor: theme.border }]}
                     />
                     <Text style={{ fontSize: 11, fontWeight: '700', color: theme.subtext }}>KG</Text>
@@ -249,8 +258,12 @@ export const AthleteStrengthModal: React.FC<AthleteStrengthModalProps> = ({
                   <View style={styles.liftInputContainer}>
                     <TextInput
                       value={String(squatKg)}
-                      onChangeText={(t) => setSquatKg(parseFloat(t) || 0)}
+                      onChangeText={(t) => {
+                        const s = sanitizeWeightInput(t);
+                        setSquatKg(Math.min(550, parseFloat(s) || 0));
+                      }}
                       keyboardType="numeric"
+                      maxLength={5}
                       style={[styles.liftInput, { color: theme.text, backgroundColor: theme.card, borderColor: theme.border }]}
                     />
                     <Text style={{ fontSize: 11, fontWeight: '700', color: theme.subtext }}>KG</Text>
@@ -266,8 +279,12 @@ export const AthleteStrengthModal: React.FC<AthleteStrengthModalProps> = ({
                   <View style={styles.liftInputContainer}>
                     <TextInput
                       value={String(deadliftKg)}
-                      onChangeText={(t) => setDeadliftKg(parseFloat(t) || 0)}
+                      onChangeText={(t) => {
+                        const s = sanitizeWeightInput(t);
+                        setDeadliftKg(Math.min(550, parseFloat(s) || 0));
+                      }}
                       keyboardType="numeric"
+                      maxLength={5}
                       style={[styles.liftInput, { color: theme.text, backgroundColor: theme.card, borderColor: theme.border }]}
                     />
                     <Text style={{ fontSize: 11, fontWeight: '700', color: theme.subtext }}>KG</Text>

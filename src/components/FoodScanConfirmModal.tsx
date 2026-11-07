@@ -32,6 +32,7 @@ import {
   saveConfirmedMeal,
 } from '../services/aiFoodScanner';
 import { MealLog } from '../db/database';
+import { sanitizeText } from '../utils/inputValidation';
 
 interface FoodScanConfirmModalProps {
   visible: boolean;
@@ -173,7 +174,10 @@ export const FoodScanConfirmModal: React.FC<FoodScanConfirmModalProps> = ({
                 <Text style={[styles.fieldLabel, { color: theme.subtext }]}>DETECTED MEAL</Text>
                 <TextInput
                   value={foodName}
-                  onChangeText={setFoodName}
+                  onChangeText={(t) => setFoodName(sanitizeText(t, 60))}
+                  maxLength={60}
+                  placeholder="e.g. Grilled Chicken & Rice"
+                  placeholderTextColor={theme.subtext}
                   style={[styles.foodNameInput, { backgroundColor: theme.cardElevated, color: theme.text, borderColor: theme.border }]}
                 />
               </View>

@@ -8,6 +8,7 @@ import {
   TextInput,
   ScrollView,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -47,6 +48,16 @@ import {
   stepHeight,
   stepWeight,
 } from '../utils/unitConversions';
+import {
+  sanitizeText,
+  sanitizeInteger,
+  sanitizeHeightInput,
+  sanitizeWeightInput,
+  validateAthleteName,
+  validateAge,
+  validateHeight,
+  validateWeight,
+} from '../utils/inputValidation';
 import { AmpedBrandLogo } from './AmpedBrandLogo';
 
 interface OnboardingModalProps {
@@ -233,6 +244,32 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   }, [trueWeightKg, trueHeightCm, parsedAge, gender, selectedGoal, selectedExp, weeklyDays]);
 
   const handleNextStep = () => {
+    if (step === 2) {
+      const nameVal = validateAthleteName(name);
+      if (!nameVal.isValid) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert('Invalid Name', nameVal.error || 'Please enter a valid athlete name.');
+        return;
+      }
+      const ageVal = validateAge(age);
+      if (!ageVal.isValid) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert('Invalid Age', ageVal.error || 'Please enter an age between 12 and 100.');
+        return;
+      }
+      const weightVal = validateWeight(weightKg, weightUnit);
+      if (!weightVal.isValid) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert('Invalid Weight', weightVal.error || 'Please enter a valid weight.');
+        return;
+      }
+      const heightVal = validateHeight(heightCm, heightUnit);
+      if (!heightVal.isValid) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert('Invalid Height', heightVal.error || 'Please enter a valid height.');
+        return;
+      }
+    }
     Haptics.selectionAsync();
     setStep((prev) => Math.min(4, prev + 1));
   };
@@ -243,8 +280,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   };
 
   const handleFinishOnboarding = () => {
+    const nameVal = validateAthleteName(name);
+    const validName = nameVal.isValid ? name.trim() : 'Alex Carter';
+
     const updatedProfile: Partial<UserProfile> = {
-      userName: name.trim() || 'Alex Carter',
+      userName: validName,
       athleteNickname: nickname.trim() || 'Apex Lifter',
       gender,
       ageYears: parsedAge,
@@ -499,7 +539,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     <Text style={[styles.fieldLabel, { color: theme.subtext }]}>FULL NAME</Text>
                     <TextInput
                       value={name}
-                      onChangeText={setName}
+                      onChangeText={(t) => setName(sanitizeText(t, 40))}
+                      maxLength={40}
                       placeholder="Alex Carter"
                       placeholderTextColor={theme.subtext}
                       style={[styles.textInputMain, { color: theme.text, borderBottomColor: theme.border }]}
@@ -510,7 +551,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     <Text style={[styles.fieldLabel, { color: theme.subtext }]}>CALLSIGN / NICK</Text>
                     <TextInput
                       value={nickname}
-                      onChangeText={setNickname}
+                      onChangeText={(t) => setNickname(sanitizeText(t, 30))}
+                      maxLength={30}
                       placeholder="Apex Lifter"
                       placeholderTextColor={theme.subtext}
                       style={[styles.textInputMain, { color: theme.text, borderBottomColor: theme.border }]}
@@ -563,8 +605,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                     <View style={styles.stepperValueBox}>
                       <TextInput
                         value={age}
-                        onChangeText={setAge}
+                        onChangeText={(t) => setAge(sanitizeInteger(t, 3))}
                         keyboardType="numeric"
+                        maxLength={3}
                         style={[styles.bigStatInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnit, { color: theme.subtext }]}>YEARS OLD</Text>
@@ -610,8 +653,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                       <View style={{ alignItems: 'center' }}>
                         <TextInput
                           value={weightKg}
-                          onChangeText={setWeightKg}
+                          onChangeText={(t) => setWeightKg(sanitizeWeightInput(t))}
                           keyboardType="numeric"
+                          maxLength={6}
                           placeholder={weightUnit === 'LBS' ? '165' : '75'}
                           placeholderTextColor={theme.subtext}
                           style={[styles.bigStatInput, { color: theme.text }]}
@@ -657,8 +701,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                       <View style={{ alignItems: 'center' }}>
                         <TextInput
                           value={heightCm}
-                          onChangeText={setHeightCm}
+                          onChangeText={(t) => setHeightCm(sanitizeHeightInput(t, heightUnit))}
                           keyboardType="numeric"
+                          maxLength={heightUnit === 'FT' ? 5 : 3}
                           placeholder={heightUnit === 'FT' ? '5.8' : '178'}
                           placeholderTextColor={theme.subtext}
                           style={[styles.bigStatInput, { color: theme.text }]}

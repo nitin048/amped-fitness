@@ -36,6 +36,7 @@ import {
   toggleWorkoutAlarm,
   deleteWorkoutAlarm,
 } from '../db/database';
+import { sanitizeText } from '../utils/inputValidation';
 
 interface WorkoutAlarmsModalProps {
   visible: boolean;
@@ -397,7 +398,8 @@ export const WorkoutAlarmsModal: React.FC<WorkoutAlarmsModalProps> = ({
                 <Text style={[styles.fieldLabel, { color: theme.subtext }]}>ALARM TITLE</Text>
                 <TextInput
                   value={title}
-                  onChangeText={setTitle}
+                  onChangeText={(t) => setTitle(sanitizeText(t, 50))}
+                  maxLength={50}
                   placeholder="e.g. Leg Day Destroyer, Morning HIIT"
                   placeholderTextColor={theme.subtext}
                   style={[styles.formInput, { color: theme.text, backgroundColor: theme.card, borderColor: theme.border }]}

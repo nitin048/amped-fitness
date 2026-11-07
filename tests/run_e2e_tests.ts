@@ -122,6 +122,7 @@ const weatherModule = loadTsModule('src/services/weatherService.ts');
 const strengthModule = loadTsModule('src/utils/strengthFormulas.ts');
 const openFoodModule = loadTsModule('src/services/openFoodApi.ts');
 const unitConversionsModule = loadTsModule('src/utils/unitConversions.ts');
+const inputValidationModule = loadTsModule('src/utils/inputValidation.ts');
 
 /* =========================================================================
    SUITE 1: DATABASE INITIALIZATION & SCHEMA MIGRATIONS
@@ -1158,6 +1159,131 @@ describe('E2E Feature 24: Biometric Unit Conversions (Height FT <-> CM & Weight 
     assert.ok(metrics.bmi > 24 && metrics.bmi < 26, `BMI sensible: ${metrics.bmi}`);
   });
 });
+
+/* =========================================================================
+   SUITE 25: APP-WIDE INPUT VALIDATION & REAL-TIME SANITIZATION ENGINE
+========================================================================= */
+describe('E2E Feature 25: App-Wide Input Validation & Real-Time Sanitization Engine', () => {
+  const {
+    sanitizeNumeric,
+    sanitizeInteger,
+    sanitizeHeightInput,
+    sanitizeWeightInput,
+    sanitizeText,
+    validateAthleteName,
+    validateAthleteNickname,
+    validateAge,
+    validateHeight,
+    validateWeight,
+    validateBodyFat,
+    validateGymSet,
+    validateRoutineName,
+    validateBarcode,
+    clampNumber,
+  } = inputValidationModule;
+
+  it('sanitizeNumeric must reject non-digits, extra dots and trim decimals', () => {
+    assert.strictEqual(sanitizeNumeric('12.3.4', true, 1), '12.3');
+    assert.strictEqual(sanitizeNumeric('abc100.55xyz', true, 2), '100.55');
+    assert.strictEqual(sanitizeNumeric('100.55', false), '10055');
+    assert.strictEqual(sanitizeNumeric('', true), '');
+  });
+
+  it('sanitizeInteger must enforce digits only and respect maxLen', () => {
+    assert.strictEqual(sanitizeInteger('abc26.5', 3), '265');
+    assert.strictEqual(sanitizeInteger('123456', 3), '123');
+    assert.strictEqual(sanitizeInteger('!@#$99', 2), '99');
+  });
+
+  it('sanitizeHeightInput and sanitizeWeightInput must preserve valid formats', () => {
+    // FT mode preserves feet and inches notations (e.g. 5.8 or 5'8)
+    assert.strictEqual(sanitizeHeightInput("5'8", 'FT'), "5'8");
+    assert.strictEqual(sanitizeHeightInput('5.10', 'FT'), '5.10');
+    assert.strictEqual(sanitizeHeightInput('185 cm', 'CM'), '185');
+
+    // Weight input preserves single decimal
+    assert.strictEqual(sanitizeWeightInput('82.5 kg'), '82.5');
+    assert.strictEqual(sanitizeWeightInput('165.34 lbs'), '165.3');
+  });
+
+  it('sanitizeText must strip control characters and clamp max length', () => {
+    assert.strictEqual(sanitizeText('Bench Press\u0000\u001F', 50), 'Bench Press');
+    assert.strictEqual(sanitizeText('A'.repeat(80), 40).length, 40);
+  });
+
+  it('validateAthleteName and validateAthleteNickname must check length limits', () => {
+    assert.strictEqual(validateAthleteName('A').isValid, false);
+    assert.strictEqual(validateAthleteName('   ').isValid, false);
+    assert.strictEqual(validateAthleteName('Alex Carter').isValid, true);
+    assert.strictEqual(validateAthleteName('A'.repeat(45)).isValid, false);
+
+    assert.strictEqual(validateAthleteNickname('Apex Lifter').isValid, true);
+    assert.strictEqual(validateAthleteNickname('A'.repeat(35)).isValid, false);
+  });
+
+  it('validateAge must enforce healthy athlete age bounds (12 - 100)', () => {
+    assert.strictEqual(validateAge(11).isValid, false);
+    assert.strictEqual(validateAge(26).isValid, true);
+    assert.strictEqual(validateAge('26').isValid, true);
+    assert.strictEqual(validateAge(101).isValid, false);
+    assert.strictEqual(validateAge('invalid').isValid, false);
+  });
+
+  it('validateHeight and validateWeight must check boundaries across units', () => {
+    // CM height
+    assert.strictEqual(validateHeight(180, 'CM').isValid, true);
+    assert.strictEqual(validateHeight(80, 'CM').isValid, false);
+    assert.strictEqual(validateHeight(260, 'CM').isValid, false);
+
+    // FT height
+    assert.strictEqual(validateHeight('5.8', 'FT').isValid, true);
+    assert.strictEqual(validateHeight('5.10', 'FT').isValid, true);
+    assert.strictEqual(validateHeight('2.5', 'FT').isValid, false);
+    assert.strictEqual(validateHeight('9.0', 'FT').isValid, false);
+
+    // KG weight
+    assert.strictEqual(validateWeight(75, 'KG').isValid, true);
+    assert.strictEqual(validateWeight(25, 'KG').isValid, false);
+    assert.strictEqual(validateWeight(350, 'KG').isValid, false);
+
+    // LBS weight
+    assert.strictEqual(validateWeight(165, 'LBS').isValid, true);
+    assert.strictEqual(validateWeight(50, 'LBS').isValid, false);
+    assert.strictEqual(validateWeight(700, 'LBS').isValid, false);
+  });
+
+  it('validateGymSet must prevent 0 reps, negative weights and out of bound sets', () => {
+    assert.strictEqual(validateGymSet(100, 10).isValid, true);
+    assert.strictEqual(validateGymSet(0, 10).isValid, true, 'Bodyweight 0kg load is allowed');
+    assert.strictEqual(validateGymSet(100, 0).isValid, false, '0 reps must be rejected');
+    assert.strictEqual(validateGymSet(100, -5).isValid, false, 'Negative reps must be rejected');
+    assert.strictEqual(validateGymSet(-10, 8).isValid, false, 'Negative weight must be rejected');
+    assert.strictEqual(validateGymSet(600, 8).isValid, false, 'Extreme weight > 500kg must be rejected');
+    assert.strictEqual(validateGymSet(100, 250).isValid, false, 'Reps > 200 must be rejected');
+  });
+
+  it('validateRoutineName must require non-empty 2 to 50 characters', () => {
+    assert.strictEqual(validateRoutineName('   ').isValid, false);
+    assert.strictEqual(validateRoutineName('A').isValid, false);
+    assert.strictEqual(validateRoutineName('Chest & Back Hypertrophy').isValid, true);
+    assert.strictEqual(validateRoutineName('X'.repeat(55)).isValid, false);
+  });
+
+  it('validateBarcode must require 6 to 14 digits', () => {
+    assert.strictEqual(validateBarcode('3017620422003').isValid, true);
+    assert.strictEqual(validateBarcode('123').isValid, false);
+    assert.strictEqual(validateBarcode('1234567890123456').isValid, false);
+    assert.strictEqual(validateBarcode('abc').isValid, false);
+  });
+
+  it('clampNumber should safely clamp values to boundaries', () => {
+    assert.strictEqual(clampNumber(150, 100, 200, 100), 150);
+    assert.strictEqual(clampNumber(50, 100, 200, 100), 100);
+    assert.strictEqual(clampNumber(250, 100, 200, 100), 200);
+    assert.strictEqual(clampNumber('invalid', 100, 200, 100), 100);
+  });
+});
+
 
 
 

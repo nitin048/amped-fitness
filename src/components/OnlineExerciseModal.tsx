@@ -24,6 +24,7 @@ import {
   mapToCoreMuscle,
 } from '../services/freeExerciseApi';
 import { Exercise } from '../db/database';
+import { sanitizeText } from '../utils/inputValidation';
 
 interface OnlineExerciseModalProps {
   visible: boolean;
@@ -114,7 +115,8 @@ export const OnlineExerciseModal: React.FC<OnlineExerciseModalProps> = ({
               placeholder="Search by name (e.g. Hack Squat, Spider Curl)..."
               placeholderTextColor={theme.subtext}
               value={searchQuery}
-              onChangeText={setSearchQuery}
+              onChangeText={(t) => setSearchQuery(sanitizeText(t, 60))}
+              maxLength={60}
               onSubmitEditing={performSearch}
               returnKeyType="search"
               style={[styles.searchInput, { color: theme.text }]}

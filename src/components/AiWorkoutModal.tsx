@@ -29,6 +29,7 @@ import {
 import { ThemePalette } from '../theme/ThemeContext';
 import { generateAiWorkoutPlan, GeneratedWorkoutPlan } from '../services/aiWorkoutCoach';
 import { UserProfile } from '../db/database';
+import { sanitizeText } from '../utils/inputValidation';
 
 interface AiWorkoutModalProps {
   visible: boolean;
@@ -315,7 +316,8 @@ export const AiWorkoutModal: React.FC<AiWorkoutModalProps> = ({
                 placeholder="e.g. 45 min Push hypertrophy focusing on upper chest and lateral delts"
                 placeholderTextColor={theme.subtext}
                 value={prompt}
-                onChangeText={setPrompt}
+                onChangeText={(t) => setPrompt(sanitizeText(t, 250))}
+                maxLength={250}
                 multiline
                 style={[styles.textInput, { color: theme.text }]}
               />

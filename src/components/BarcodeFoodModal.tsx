@@ -33,6 +33,7 @@ import {
   ATHLETE_PRESET_BARCODES,
 } from '../services/openFoodApi';
 import { MealLog } from '../db/database';
+import { sanitizeInteger, validateBarcode } from '../utils/inputValidation';
 
 interface BarcodeFoodModalProps {
   visible: boolean;
@@ -54,11 +55,12 @@ export const BarcodeFoodModal: React.FC<BarcodeFoodModalProps> = ({
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const handleLookup = async (code: string) => {
-    const target = code.trim();
-    if (target.length < 5) {
-      setSearchError('Please enter a valid 8 to 14 digit barcode.');
+    const val = validateBarcode(code);
+    if (!val.isValid) {
+      setSearchError(val.error || 'Please enter a valid barcode (6 to 14 digits).');
       return;
     }
+    const target = code.trim();
 
     setSearchError(null);
     setIsLoading(true);
@@ -131,9 +133,10 @@ export const BarcodeFoodModal: React.FC<BarcodeFoodModalProps> = ({
               <TextInput
                 value={barcodeInput}
                 onChangeText={(text) => {
-                  setBarcodeInput(text);
+                  setBarcodeInput(sanitizeInteger(text, 14));
                   setSearchError(null);
                 }}
+                maxLength={14}
                 placeholder="Type or paste EAN/UPC barcode..."
                 placeholderTextColor={theme.subtext}
                 keyboardType="numeric"

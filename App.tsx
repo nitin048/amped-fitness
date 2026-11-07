@@ -53,6 +53,12 @@ import { OlympicPlateRack } from './src/components/OlympicPlateRack';
 import { AppleRestTimer } from './src/components/AppleRestTimer';
 import { PRESET_ROUTINES, WorkoutRoutine } from './src/db/routines';
 import { CustomRoutineModal } from './src/components/CustomRoutineModal';
+import {
+  sanitizeText,
+  sanitizeInteger,
+  sanitizeWeightInput,
+  validateGymSet,
+} from './src/utils/inputValidation';
 import { WorkoutSummaryModal } from './src/components/WorkoutSummaryModal';
 import { UserProfileModal } from './src/components/UserProfileModal';
 import { DailyTargetsModal } from './src/components/DailyTargetsModal';
@@ -741,6 +747,14 @@ const MainScreen = () => {
   // Complete Set (Gym Logger)
   const handleCompleteSet = () => {
     if (!selectedEx) return;
+
+    const setValidation = validateGymSet(weightKg, repsCount);
+    if (!setValidation.isValid) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert('Invalid Set Details', setValidation.error || 'Please enter valid reps and weight.');
+      return;
+    }
+
     const velocity = isTrackingSet ? stopVelocityTracking() : 0.65;
 
     const result = logGymSet(selectedEx.id, weightKg, repsCount, velocity, selectedRpe);
@@ -2280,7 +2294,9 @@ const MainScreen = () => {
                         placeholder="Search movement (Bench, Squat, Pull Up)..."
                         placeholderTextColor={theme.subtext}
                         value={searchQuery}
-                        onChangeText={setSearchQuery}
+                        onChangeText={(t) => setSearchQuery(sanitizeText(t, 60))}
+                        maxLength={60}
+                        returnKeyType="search"
                         style={[styles.searchInput, { color: theme.text, fontSize: 13 }]}
                       />
                       {searchQuery.length > 0 && (
@@ -2759,8 +2775,12 @@ const MainScreen = () => {
                       <View style={styles.stepperDisplay}>
                         <TextInput
                           value={String(weightKg)}
-                          onChangeText={(v) => setWeightKg(parseFloat(v) || 0)}
+                          onChangeText={(v) => {
+                            const clean = sanitizeWeightInput(v);
+                            setWeightKg(Math.min(500, parseFloat(clean) || 0));
+                          }}
                           keyboardType="numeric"
+                          maxLength={6}
                           style={[styles.stepperInput, { color: theme.text }]}
                         />
                         <Text style={[styles.stepperUnit, { color: theme.subtext }]}>KG</Text>
@@ -2789,8 +2809,12 @@ const MainScreen = () => {
                       <View style={styles.stepperDisplay}>
                         <TextInput
                           value={String(repsCount)}
-                          onChangeText={(v) => setRepsCount(parseInt(v, 10) || 0)}
+                          onChangeText={(v) => {
+                            const clean = sanitizeInteger(v, 3);
+                            setRepsCount(Math.min(200, parseInt(clean, 10) || 0));
+                          }}
                           keyboardType="numeric"
+                          maxLength={3}
                           style={[styles.stepperInput, { color: theme.text }]}
                         />
                         <Text style={[styles.stepperUnit, { color: theme.subtext }]}>REPS</Text>
@@ -3882,7 +3906,8 @@ const MainScreen = () => {
                   placeholder="Search 3M+ foods (e.g. Oats, Chicken, Rice)..."
                   placeholderTextColor={theme.subtext}
                   value={foodSearchQuery}
-                  onChangeText={setFoodSearchQuery}
+                  onChangeText={(t) => setFoodSearchQuery(sanitizeText(t, 80))}
+                  maxLength={80}
                   onSubmitEditing={handleSearchOpenFood}
                   returnKeyType="search"
                   style={[styles.openFoodSearchInput, { color: theme.text }]}
@@ -3974,7 +3999,8 @@ const MainScreen = () => {
                   placeholder="Optional hint: e.g. 3 Eggs Omelette + Toast"
                   placeholderTextColor={theme.subtext}
                   value={foodHint}
-                  onChangeText={setFoodHint}
+                  onChangeText={(t) => setFoodHint(sanitizeText(t, 120))}
+                  maxLength={120}
                   style={[styles.foodHintInput, { backgroundColor: theme.cardElevated, color: theme.text, borderColor: theme.border }]}
                 />
 

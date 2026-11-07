@@ -28,6 +28,7 @@ import {
 import { Exercise, saveCustomRoutine } from '../db/database';
 import { WorkoutRoutine } from '../db/routines';
 import { ThemePalette } from '../theme/ThemeContext';
+import { sanitizeText, validateRoutineName } from '../utils/inputValidation';
 
 interface CustomRoutineModalProps {
   visible: boolean;
@@ -102,9 +103,10 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
   };
 
   const handleSave = () => {
-    if (!routineName.trim()) {
+    const nameVal = validateRoutineName(routineName);
+    if (!nameVal.isValid) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Routine Name Required', 'Please enter a name for your custom workout routine.');
+      Alert.alert('Invalid Routine Name', nameVal.error || 'Please enter a name for your custom workout routine (2-50 characters).');
       return;
     }
 
@@ -189,7 +191,8 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
                 placeholder="e.g. Arms & Shoulder Blast, Upper Power..."
                 placeholderTextColor={theme.subtext}
                 value={routineName}
-                onChangeText={setRoutineName}
+                onChangeText={(t) => setRoutineName(sanitizeText(t, 50))}
+                maxLength={50}
                 style={[
                   styles.textInput,
                   { backgroundColor: theme.cardElevated, borderColor: theme.border, color: theme.text },
@@ -203,7 +206,8 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
                 placeholder="e.g. High mechanical tension & bicep peak isolation"
                 placeholderTextColor={theme.subtext}
                 value={tagline}
-                onChangeText={setTagline}
+                onChangeText={(t) => setTagline(sanitizeText(t, 100))}
+                maxLength={100}
                 style={[
                   styles.textInput,
                   { backgroundColor: theme.cardElevated, borderColor: theme.border, color: theme.text },
@@ -360,7 +364,8 @@ export const CustomRoutineModal: React.FC<CustomRoutineModalProps> = ({
                   placeholder="Filter exercises..."
                   placeholderTextColor={theme.subtext}
                   value={searchQuery}
-                  onChangeText={setSearchQuery}
+                  onChangeText={(t) => setSearchQuery(sanitizeText(t, 50))}
+                  maxLength={50}
                   style={[styles.searchInput, { color: theme.text }]}
                 />
                 {searchQuery.length > 0 && (

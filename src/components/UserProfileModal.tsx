@@ -12,6 +12,7 @@ import {
   Switch,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -55,6 +56,18 @@ import {
   weightToKg,
   kgToDisplayWeight,
 } from '../utils/unitConversions';
+import {
+  sanitizeText,
+  sanitizeInteger,
+  sanitizeNumeric,
+  sanitizeHeightInput,
+  sanitizeWeightInput,
+  validateAthleteName,
+  validateAge,
+  validateHeight,
+  validateWeight,
+  validateBodyFat,
+} from '../utils/inputValidation';
 
 interface UserProfileModalProps {
   visible: boolean;
@@ -275,6 +288,41 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   const handleSave = () => {
+    const nameVal = validateAthleteName(name);
+    if (!nameVal.isValid) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert('Invalid Name', nameVal.error || 'Please enter a valid athlete name.');
+      return;
+    }
+
+    const ageVal = validateAge(age);
+    if (!ageVal.isValid) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert('Invalid Age', ageVal.error || 'Please enter an age between 12 and 100.');
+      return;
+    }
+
+    const weightVal = validateWeight(weightKg, weightUnit);
+    if (!weightVal.isValid) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert('Invalid Weight', weightVal.error || 'Please enter a valid body weight.');
+      return;
+    }
+
+    const heightVal = validateHeight(heightCm, heightUnit);
+    if (!heightVal.isValid) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert('Invalid Height', heightVal.error || 'Please enter a valid height.');
+      return;
+    }
+
+    const bfVal = validateBodyFat(bodyFatPct);
+    if (!bfVal.isValid) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert('Invalid Body Fat', bfVal.error || 'Body fat percentage must be between 3% and 60%.');
+      return;
+    }
+
     const trueWeightKg = weightToKg(weightKg, weightUnit);
     const trueHeightCm = heightToCm(heightCm, heightUnit);
 
@@ -480,7 +528,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <Text style={[styles.fieldLabel, { color: theme.subtext }]}>ATHLETE FULL NAME</Text>
                     <TextInput
                       value={name}
-                      onChangeText={setName}
+                      onChangeText={(t) => setName(sanitizeText(t, 40))}
+                      maxLength={40}
                       placeholder="Alex Carter"
                       placeholderTextColor={theme.subtext}
                       style={[styles.nameInput, { color: theme.text, borderBottomColor: theme.border }]}
@@ -489,7 +538,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <Text style={[styles.fieldLabel, { color: theme.subtext, marginTop: 10 }]}>ATHLETE NICKNAME / TITLE</Text>
                     <TextInput
                       value={nickname}
-                      onChangeText={setNickname}
+                      onChangeText={(t) => setNickname(sanitizeText(t, 30))}
+                      maxLength={30}
                       placeholder="Apex Lifter"
                       placeholderTextColor={theme.subtext}
                       style={[styles.nameInput, { color: theme.text, borderBottomColor: theme.border }]}
@@ -560,8 +610,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
                       <TextInput
                         value={age}
-                        onChangeText={setAge}
+                        onChangeText={(t) => setAge(sanitizeInteger(t, 3))}
                         keyboardType="numeric"
+                        maxLength={3}
+                        placeholder="26"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.bigStatInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>YRS</Text>
@@ -591,8 +644,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={weightKg}
-                        onChangeText={setWeightKg}
+                        onChangeText={(t) => setWeightKg(sanitizeWeightInput(t))}
                         keyboardType="numeric"
+                        maxLength={6}
                         placeholder={weightUnit === 'LBS' ? '165' : '75'}
                         placeholderTextColor={theme.subtext}
                         style={[styles.bigStatInput, { color: theme.text }]}
@@ -621,8 +675,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={heightCm}
-                        onChangeText={setHeightCm}
+                        onChangeText={(t) => setHeightCm(sanitizeHeightInput(t, heightUnit))}
                         keyboardType="numeric"
+                        maxLength={heightUnit === 'FT' ? 5 : 3}
                         placeholder={heightUnit === 'FT' ? '5.8' : '178'}
                         placeholderTextColor={theme.subtext}
                         style={[styles.bigStatInput, { color: theme.text }]}
@@ -640,8 +695,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
                         <TextInput
                           value={bodyFatPct}
-                          onChangeText={setBodyFatPct}
+                          onChangeText={(t) => setBodyFatPct(sanitizeNumeric(t, true, 1).slice(0, 4))}
                           keyboardType="numeric"
+                          maxLength={4}
                           placeholder="15"
                           placeholderTextColor={theme.subtext}
                           style={[styles.bigStatInput, { color: theme.text }]}
@@ -963,8 +1019,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={targetVolume}
-                        onChangeText={setTargetVolume}
+                        onChangeText={(t) => setTargetVolume(sanitizeInteger(t, 5))}
                         keyboardType="numeric"
+                        maxLength={5}
+                        placeholder="5000"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.targetInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>KG</Text>
@@ -981,8 +1040,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={targetSets}
-                        onChangeText={setTargetSets}
+                        onChangeText={(t) => setTargetSets(sanitizeInteger(t, 3))}
                         keyboardType="numeric"
+                        maxLength={3}
+                        placeholder="20"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.targetInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>SETS</Text>
@@ -998,8 +1060,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={targetCalories}
-                        onChangeText={setTargetCalories}
+                        onChangeText={(t) => setTargetCalories(sanitizeInteger(t, 5))}
                         keyboardType="numeric"
+                        maxLength={5}
+                        placeholder="2400"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.targetInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>KCAL</Text>
@@ -1012,8 +1077,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={targetProtein}
-                        onChangeText={setTargetProtein}
+                        onChangeText={(t) => setTargetProtein(sanitizeInteger(t, 4))}
                         keyboardType="numeric"
+                        maxLength={4}
+                        placeholder="160"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.targetInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>G</Text>
@@ -1029,8 +1097,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={targetCarbs}
-                        onChangeText={setTargetCarbs}
+                        onChangeText={(t) => setTargetCarbs(sanitizeInteger(t, 4))}
                         keyboardType="numeric"
+                        maxLength={4}
+                        placeholder="250"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.targetInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>G</Text>
@@ -1043,8 +1114,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={targetFat}
-                        onChangeText={setTargetFat}
+                        onChangeText={(t) => setTargetFat(sanitizeInteger(t, 3))}
                         keyboardType="numeric"
+                        maxLength={3}
+                        placeholder="70"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.targetInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>G</Text>
@@ -1063,8 +1137,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={targetWater}
-                        onChangeText={setTargetWater}
+                        onChangeText={(t) => setTargetWater(sanitizeInteger(t, 5))}
                         keyboardType="numeric"
+                        maxLength={5}
+                        placeholder="3000"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.targetInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>ML</Text>
@@ -1080,8 +1157,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
                       <TextInput
                         value={targetSleep}
-                        onChangeText={setTargetSleep}
+                        onChangeText={(t) => setTargetSleep(sanitizeNumeric(t, true, 1).slice(0, 4))}
                         keyboardType="numeric"
+                        maxLength={4}
+                        placeholder="8.0"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.targetInput, { color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>HRS</Text>
@@ -1139,8 +1219,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
                       <TextInput
                         value={barWeight}
-                        onChangeText={setBarWeight}
+                        onChangeText={(t) => setBarWeight(sanitizeNumeric(t, true, 1).slice(0, 4))}
                         keyboardType="numeric"
+                        maxLength={4}
+                        placeholder="20"
+                        placeholderTextColor={theme.subtext}
                         style={[styles.targetInput, { width: 50, textAlign: 'center', color: theme.text }]}
                       />
                       <Text style={[styles.statUnitText, { color: theme.subtext }]}>KG</Text>
@@ -1422,7 +1505,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       </Text>
                       <TextInput
                         value={geminiKey}
-                        onChangeText={setGeminiKey}
+                        onChangeText={(t) => setGeminiKey(sanitizeText(t, 100))}
+                        maxLength={100}
                         placeholder="AIzaSy..."
                         placeholderTextColor={theme.subtext}
                         secureTextEntry
