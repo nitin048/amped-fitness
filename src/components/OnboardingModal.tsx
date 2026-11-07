@@ -370,16 +370,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <View style={styles.stepContainer}>
               {/* BRAND HERO SECTION */}
               <View style={styles.brandHeroCenter}>
-                <View style={[styles.versionBadge, { backgroundColor: `${theme.primary}18`, borderColor: `${theme.primary}40` }]}>
+                <View style={[styles.versionBadge, { backgroundColor: `${theme.primary}18`, borderColor: `${theme.primary}40`, marginBottom: 14 }]}>
                   <Sparkles size={11} color={theme.primary} />
                   <Text style={[styles.versionBadgeText, { color: theme.primary }]}>
                     ATHLETIC OPERATING SYSTEM • V2.0
                   </Text>
-                </View>
-
-                <View style={styles.logoWrapper}>
-                  <View style={[styles.logoGlowCircle, { backgroundColor: `${theme.primary}12` }]} />
-                  <AmpedBrandLogo theme={theme} size={68} />
                 </View>
 
                 <Text style={[styles.welcomeHeadline, { color: theme.text }]}>

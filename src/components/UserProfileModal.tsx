@@ -388,11 +388,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* HEADER */}
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Image
-                source={require('../../assets/apmed_logo_transparent.png')}
-                style={{ width: 34, height: 34, borderRadius: 8 }}
-                resizeMode="contain"
-              />
+              <View style={[styles.profileIconBadge, { backgroundColor: `${theme.primary}20` }]}>
+                <Award size={20} color={theme.primary} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.headerTitle, { color: theme.text }]} numberOfLines={1}>
                   Athlete Profile & Goals
